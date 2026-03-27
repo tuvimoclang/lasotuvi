@@ -5,7 +5,57 @@
 <meta name="viewport" content="width=device-width,initial-scale=1.0">
 <title>Tạo Lá Số Tử Vi – Mộc Lang</title>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
-<script src="tuvi-engine.js"></script>
+<script>
+// ============================================================
+// TỬ VI ENGINE — JavaScript port từ app.py (Python/Flask)
+// Thuật toán âm lịch: Hồ Ngọc Đức — chuẩn lịch VN (UTC+7)
+// ============================================================
+const TuViEngine = (() => {
+  const DIA_CHI   = ["Tý","Sửu","Dần","Mão","Thìn","Tỵ","Ngọ","Mùi","Thân","Dậu","Tuất","Hợi"];
+  const THIEN_CAN = ["Giáp","Ất","Bính","Đinh","Mậu","Kỷ","Canh","Tân","Nhâm","Quý"];
+  const NGU_HANH_CUC = {2:"Thủy nhị cục",3:"Mộc tam cục",4:"Kim tứ cục",5:"Thổ ngũ cục",6:"Hỏa lục cục"};
+  const BANG_CUC = [[2,6,5,3,4],[6,5,3,4,2],[3,4,2,6,5],[5,3,4,2,6],[4,2,6,5,3]];
+  const CAN_NHOM = [0,1,2,3,4,0,1,2,3,4];
+  function chiNhom(chi) {
+    if(chi===0||chi===1)return 0;if(chi===2||chi===3||chi===10||chi===11)return 1;
+    if(chi===4||chi===5)return 2;if(chi===6||chi===7)return 3;if(chi===8||chi===9)return 4;return 0;
+  }
+  function jdFromDate(Y,M,D){if(M<=2){Y-=1;M+=12;}const A=Math.floor(Y/100),B=2-A+Math.floor(A/4);return Math.floor(365.25*(Y+4716))+Math.floor(30.6001*(M+1))+D+B-1524;}
+  function newMoon(k,tz=7){const T=k/1236.85,T2=T*T,T3=T2*T,dr=Math.PI/180;let jd1=2415020.75933+29.53058868*k+0.0001178*T2-0.000000155*T3;jd1+=0.00033*Math.sin((166.56+132.87*T-0.009173*T2)*dr);const M1=359.2242+29.10535608*k-0.0000333*T2-0.00000347*T3,Mpr=306.0253+385.81691806*k+0.0107306*T2+0.00001236*T3,F=21.2964+390.67050646*k-0.0016528*T2-0.00000239*T3;let C1=(0.1734-0.000393*T)*Math.sin(M1*dr);C1+=0.0021*Math.sin(2*dr*M1);C1-=0.4068*Math.sin(Mpr*dr);C1+=0.0161*Math.sin(2*dr*Mpr);C1-=0.0004*Math.sin(3*dr*Mpr);C1+=0.0104*Math.sin(2*dr*F);C1-=0.0051*Math.sin((M1+Mpr)*dr);C1-=0.0074*Math.sin((M1-Mpr)*dr);C1+=0.0004*Math.sin((2*F+M1)*dr);C1-=0.0004*Math.sin((2*F-M1)*dr);C1-=0.0006*Math.sin((2*F+Mpr)*dr);C1+=0.0010*Math.sin((2*F-Mpr)*dr);C1+=0.0005*Math.sin((M1+2*Mpr)*dr);const deltat=T<-11?65.0/86400:(-0.000278+0.000265*T+0.000262*T2);return Math.floor(jd1+C1-deltat+tz/24.0+0.5);}
+  function sunLongitude(jdn,tz=7){const T=(jdn-tz/24.0-2451545.0)/36525.0,dr=Math.PI/180,M=357.52910+35999.05030*T-0.0001559*T*T-0.00000048*T*T*T,L0=280.46646+36000.76983*T+0.0003032*T*T;let DL=(1.914600-0.004817*T-0.000014*T*T)*Math.sin(dr*M);DL+=(0.019993-0.000101*T)*Math.sin(2*dr*M);DL+=0.000290*Math.sin(3*dr*M);let L=L0+DL;const omega=125.04-1934.136*T;L=L-0.00569-0.00478*Math.sin(omega*dr);L=L*dr;L=L-Math.PI*2*Math.floor(L/(Math.PI*2));return Math.floor(L/Math.PI*6);}
+  function getLunarMonth11(yy,tz=7){const off=jdFromDate(yy,12,31)-2415021;let k=Math.floor(off/29.530588853),nm=newMoon(k,tz);if(sunLongitude(nm,tz)>=9)nm=newMoon(k-1,tz);return nm;}
+  function findLeapMonth(kStart,nMonths,tz=7){for(let i=0;i<nMonths;i++){const nmCur=newMoon(kStart+i,tz),nmNext=newMoon(kStart+i+1,tz);if(sunLongitude(nmCur,tz)===sunLongitude(nmNext,tz))return i;}return -1;}
+  function duongSangAm(sy,sm,sd,tz=7){const jd=jdFromDate(sy,sm,sd),a11=getLunarMonth11(sy-1,tz),b11=getLunarMonth11(sy,tz),leapYear=(b11-a11)>365;let k=Math.floor((jd-2415021.076998695)/29.530588853),nm=newMoon(k,tz);if(nm>jd){nm=newMoon(k-1,tz);k-=1;}else if(jd-nm>=29){const nmNext=newMoon(k+1,tz);if(nmNext<=jd){nm=nmNext;k+=1;}}const amDay=jd-nm+1;let kA11=Math.floor((a11-2415021.076998695)/29.530588853);if(newMoon(kA11-1,tz)===a11)kA11-=1;else if(newMoon(kA11+1,tz)===a11)kA11+=1;else if(newMoon(kA11+2,tz)===a11)kA11+=2;else if(newMoon(kA11-2,tz)===a11)kA11-=2;let monthOffset=k-kA11,isLeap=false;if(leapYear){const leapIdx=findLeapMonth(kA11,13,tz);if(leapIdx>=0){if(monthOffset===leapIdx){isLeap=true;monthOffset-=1;}else if(monthOffset>leapIdx){monthOffset-=1;}}}const lunarMonth=((monthOffset+11-1)%12)+1,amYear=(monthOffset<=1)?sy-1:sy;return{ay:amYear,am:lunarMonth,ad:amDay,isLeap};}
+  function canNam(y){return(y+6)%10;}function chiNam(y){return(y+8)%12;}function gioDenChi(h){return Math.floor(((h+1)%24)/2);}
+  function ngayAmLichChoGio(sy,sm,sd,gioH,tz=7){if(gioH>=23){const d=new Date(sy,sm-1,sd+1);return duongSangAm(d.getFullYear(),d.getMonth()+1,d.getDate(),tz);}return duongSangAm(sy,sm,sd,tz);}
+  function tinhCuc(canN,chiMenh){return BANG_CUC[chiNhom(chiMenh)][CAN_NHOM[canN]];}
+  function viTriMenh(thang,chiGio){return(2+(thang-1)-chiGio+24)%12;}function viTriThan(thang,chiGio){return(2+(thang-1)+chiGio)%12;}
+  function canThangDan(cn){return[2,4,6,8,0,2,4,6,8,0][cn];}function canCung(canDan,buoc){return(canDan+buoc)%10;}
+  function tenCanChiCung(canDan,viTri){const buoc=(viTri-2+12)%12;return`${THIEN_CAN[canCung(canDan,buoc)]} ${DIA_CHI[viTri]}`;}
+  function anTuVi(ngay,cucVal){let d=ngay,c=cucVal,bu=0;while((d+bu)%c!==0)bu++;const thuong=Math.floor((d+bu)/c);let vt=(2+thuong-1)%12;if(bu%2!==0)vt=(vt-bu+120)%12;else vt=(vt+bu)%12;return vt;}
+  function an14ChinhTinh(vtTuvi,vtThienPhu,sc){const tG=[[0,"Tử Vi"],[-1,"Thiên Cơ"],[-3,"Thái Dương"],[-4,"Vũ Khúc"],[-5,"Thiên Đồng"],[-8,"Liêm Trinh"]],pG=[[0,"Thiên Phủ"],[1,"Thái Âm"],[2,"Tham Lang"],[3,"Cự Môn"],[4,"Thiên Tướng"],[5,"Thiên Lương"],[6,"Thất Sát"],[10,"Phá Quân"]];for(const[off,ten]of tG)sc[(vtTuvi+off+120)%12].push({ten,loai:"chinh"});for(const[off,ten]of pG)sc[(vtThienPhu+off)%12].push({ten,loai:"chinh"});}
+  function anPhuTinh(thang,chiGio,sc){sc[(4+thang-1)%12].push({ten:"Tả Phụ",loai:"phu"});sc[(10-thang+1+120)%12].push({ten:"Hữu Bật",loai:"phu"});sc[(10-chiGio+120)%12].push({ten:"Văn Xương",loai:"phu"});sc[(4+chiGio)%12].push({ten:"Văn Khúc",loai:"phu"});}
+  function tinhDaiHan(viMenh,cn,gioiTinh,cucVal,namSinh){const canDuong=(cn%2===0),isNam=["nam","male","m"].includes(gioiTinh.toLowerCase()),thuan=(isNam&&canDuong)||(!isNam&&!canDuong),daiHan=[];for(let i=0;i<12;i++){const cung=(viMenh+(thuan?i:-i)+120)%12,tb=cucVal+i*10;daiHan.push({thu:i+1,cung,diaChi:DIA_CHI[cung],tuoiBatDau:tb,tuoiKetThuc:tb+9,namBatDau:namSinh+tb,namKetThuc:namSinh+tb+9});}return{daiHan,thuan};}
+  function tinhTieuHan(gioiTinh,namSinh,soNam=30){const isNam=["nam","male","m"].includes(gioiTinh.toLowerCase()),khoi=isNam?2:8;return Array.from({length:soNam},(_,i)=>({nam:namSinh+i,tuoi:i,cung:(khoi+i)%12,diaChi:DIA_CHI[(khoi+i)%12]}));}
+  function lapLaSo(data){
+    const hoTen=data.hoTen||'',gioiTinh=data.gioiTinh||'nam',gioStr=data.gioSinh||'00:30',lichLoai=data.lichLoai||'duong',ngaySinh=data.ngaySinh||'',muiGio=parseFloat(data.muiGio??7),thanhPho=data.thanhPho||'',quocGia=data.quocGia||'';
+    if(!ngaySinh)return{status:"error",message:"Vui lòng nhập ngày sinh!"};
+    let sy,sm,sd,gioH;
+    try{[sy,sm,sd]=ngaySinh.split('-').map(Number);gioH=parseInt(gioStr.split(':')[0]);}catch(e){return{status:"error",message:"Định dạng ngày/giờ không hợp lệ."};}
+    let ay,am,ad,isLeap,duongStr,amStr;
+    if(lichLoai==='duong'){({ay,am,ad,isLeap}=ngayAmLichChoGio(sy,sm,sd,gioH,muiGio));duongStr=`${String(sd).padStart(2,'0')}/${String(sm).padStart(2,'0')}/${sy}`;amStr=`${String(ad).padStart(2,'0')}/${String(am).padStart(2,'0')}/${ay}`+(isLeap?" (nhuận)":"");}
+    else{[ay,am,ad]=[sy,sm,sd];isLeap=!!data.thangNhuan;amStr=`${String(ad).padStart(2,'0')}/${String(am).padStart(2,'0')}/${ay}`+(isLeap?" (nhuận)":"");duongStr="(nhập âm lịch)";}
+    if(!(am>=1&&am<=12)||!(ad>=1&&ad<=30))return{status:"error",message:`Âm lịch không hợp lệ: ${ad}/${am}/${ay}`};
+    const chiGio=gioDenChi(gioH),cn=canNam(ay),ch=chiNam(ay),canDan=canThangDan(cn),viMenh=viTriMenh(am,chiGio),viThan=viTriThan(am,chiGio),buocM=(viMenh-2+12)%12,canM=canCung(canDan,buocM),cucVal=tinhCuc(cn,viMenh),tenCuc=NGU_HANH_CUC[cucVal],vtTuvi=anTuVi(ad,cucVal),vtThienPhu=(16-vtTuvi+120)%12;
+    const sc={};for(let i=0;i<12;i++)sc[i]=[];an14ChinhTinh(vtTuvi,vtThienPhu,sc);anPhuTinh(am,chiGio,sc);
+    const tenCung={};for(let i=0;i<12;i++)tenCung[i]=tenCanChiCung(canDan,i);
+    const{daiHan,thuan}=tinhDaiHan(viMenh,cn,gioiTinh,cucVal,ay),tieuHan=tinhTieuHan(gioiTinh,ay,30),tzSign=muiGio>=0?"+":"";
+    return{status:"success",message:`Lập lá số thành công! ${tenCuc}.`,thongTin:{hoTen,gioiTinh,ngayAm:amStr,ngayDuong:duongStr,thangNhuan:isLeap,gioSinh:`${DIA_CHI[chiGio]} thời (${gioStr})`,canChiNam:`${THIEN_CAN[cn]} ${DIA_CHI[ch]}`,thanhPho,quocGia,muiGio:`UTC${tzSign}${muiGio}`},nguHanhCuc:{tenCuc,soCuc:cucVal,canMenh:THIEN_CAN[canM],chiMenh:DIA_CHI[viMenh]},cung:{menh:{viTri:viMenh,tenCung:tenCung[viMenh],diaChi:DIA_CHI[viMenh]},than:{viTri:viThan,tenCung:tenCung[viThan],diaChi:DIA_CHI[viThan]}},tuvi:{viTri:vtTuvi,diaChi:DIA_CHI[vtTuvi]},thienPhu:{viTri:vtThienPhu,diaChi:DIA_CHI[vtThienPhu]},saoCung:sc,tenCung,diaChi:Object.fromEntries(DIA_CHI.map((v,i)=>[i,v])),daiHan,tieuHan,chieuDaiHan:thuan?"thuận":"nghịch"};
+  }
+  function chuyenLich(ngay,lichLoai='duong',tz=7){try{const[y,m,d]=ngay.split('-').map(Number);if(lichLoai==='duong'){const{ay,am,ad,isLeap}=duongSangAm(y,m,d,tz);return{status:"success",duongLich:`${String(d).padStart(2,'0')}/${String(m).padStart(2,'0')}/${y}`,amLich:`${String(ad).padStart(2,'0')}/${String(am).padStart(2,'0')}/${ay}`,thangNhuan:isLeap};}return{status:"success",amLich:`${String(d).padStart(2,'0')}/${String(m).padStart(2,'0')}/${y}`};}catch(e){return{status:"error",message:"Định dạng YYYY-MM-DD."};}}
+  return{lapLaSo,chuyenLich,DIA_CHI,THIEN_CAN};
+})();
+</script>
 <style>
 :root{
   --bg:#fdf6e3;--bg2:#f5ead0;--bg3:#ede0c0;
@@ -97,7 +147,7 @@ body{background:var(--bg);color:var(--text);font-family:'Segoe UI',Arial,sans-se
 
 /* Ô trung tâm */
 .cung.center{grid-column:2/4;grid-row:2/4;background:var(--bg);display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;min-height:0;border:1px solid #8B451366 !important;padding:14px 10px;cursor:default;}
-.ci-name{font-size:.95rem;font-weight:900;color:var(--text);margin-bottom:5px;}
+.ci-name{font-size:.95rem;font-weight:900;color:#1a3a6b;margin-bottom:5px;}
 .ci-zalo{font-size:.85rem;color:var(--red);font-weight:900;display:block;margin-bottom:6px;}
 .ci-row{font-size:.82rem;color:var(--text2);display:block;line-height:1.7;}
 .ci-cuc{font-size:.9rem;font-weight:800;color:var(--terra);margin-top:6px;display:block;}
@@ -793,7 +843,7 @@ async function lapLaSo(){
   const gioSinhStr=`${String(gioH).padStart(2,'0')}:${String(gioMin).padStart(2,'0')}`;
   try{
     const d = TuViEngine.lapLaSo({
-      hoTen: document.getElementById('hoTen').value||'Khách',
+      hoTen: document.getElementById('hoTen').value||'Tử Vi Mộc Lang',
       gioiTinh: document.getElementById('gioiTinh').value,
       lichLoai: document.getElementById('lichLoai').value,
       ngaySinh,
