@@ -122,6 +122,15 @@ body{background:var(--bg);color:var(--text);font-family:'Segoe UI',Arial,sans-se
 .ban-tuvi{display:grid;grid-template-columns:repeat(4,1fr);gap:0;border:3px solid var(--border);background:var(--border);border-radius:3px;}
 #banSVG{position:absolute;overflow:visible;pointer-events:none;z-index:40;}
 
+/* Mobile: scale bàn tử vi vừa màn hình */
+@media(max-width:700px){
+  .ban-outer{padding:50px 10px;overflow-x:auto;}
+  .ban-tuvi-scaler{
+    transform-origin:top left;
+    /* JS sẽ tự set transform:scale() */
+  }
+}
+
 .cung{background:var(--bg);padding:5px 5px 38px 5px;min-height:145px;position:relative;border:1px solid #8B451366;display:flex;flex-direction:column;align-items:stretch;cursor:pointer;}
 .cung:hover{background:#fdf0d0;}
 
@@ -265,9 +274,11 @@ body{background:var(--bg);color:var(--text);font-family:'Segoe UI',Arial,sans-se
       <button class="btn-act" id="btnLuuNien" onclick="toggleLuuNien()">📅 Hiện lưu niên</button>
       <a href="https://zalo.me/0909794441" class="btn-act primary" target="_blank">📱 Nhờ Ngọc luận giải</a>
     </div>
-    <div class="ban-outer">
-      <div class="ban-wrap" id="banWrap">
-        <div class="ban-tuvi" id="banTuvi"></div>
+    <div class="ban-outer" id="banOuter">
+      <div class="ban-tuvi-scaler" id="banScaler">
+        <div class="ban-wrap" id="banWrap">
+          <div class="ban-tuvi" id="banTuvi"></div>
+        </div>
       </div>
     </div>
     <div class="daihan-wrap">
@@ -615,6 +626,38 @@ function equalizeCungHeights(){
   cungs.forEach(el=>el.style.minHeight=maxH+'px');
 }
 
+// Auto scale bàn tử vi vừa màn hình trên mobile
+function autoScaleBan(){
+  const scaler=document.getElementById('banScaler');
+  const outer=document.getElementById('banOuter');
+  const wrap=document.getElementById('banWrap');
+  if(!scaler||!outer||!wrap)return;
+
+  // Reset scale trước để đo kích thước thực
+  scaler.style.transform='scale(1)';
+  scaler.style.transformOrigin='top left';
+  scaler.style.width='';
+  outer.style.height='';
+
+  const naturalW=wrap.offsetWidth;
+  // Tổng chiều rộng sẵn có = outer width - padding 2 bên (62px*2 trên desktop)
+  const outerPad=window.innerWidth<=700?20:144; // 72px*2
+  const availW=outer.offsetWidth-outerPad;
+
+  if(naturalW>0&&availW>0&&naturalW>availW){
+    const scale=availW/naturalW;
+    scaler.style.transform=`scale(${scale})`;
+    scaler.style.transformOrigin='top left';
+    // Đặt chiều cao outer bằng chiều cao sau scale để không bị overlap
+    const scaledH=wrap.offsetHeight*scale;
+    scaler.style.width=(naturalW)+'px';
+    outer.style.height=(scaledH+outerPad)+'px';
+  } else {
+    scaler.style.transform='scale(1)';
+    outer.style.height='';
+  }
+}
+
 // ── DRAW ARROWS ──
 function drawAllArrows(lyTamList,huongTamList){
   const wrap=document.getElementById('banWrap');if(!wrap)return;
@@ -849,7 +892,7 @@ async function lapLaSo(){
       ngaySinh,
       gioSinh: gioSinhStr,
       muiGio: parseFloat(document.getElementById('muiGio').value),
-      thanhPho: document.getElementById('thanhPhoInput').value.trim()||document.getElementById('quocGiaInput').value.replace(/^.{2}\s/,'').trim(),
+      thanhPho: document.getElementById('thanhPhoInput').value.trim()||_selCity||'',
       thangNhuan: document.getElementById('lichLoai').value==='am'&&document.getElementById('thangNhuan').value==='1'
     });
     if(d.status!=='success'){err.textContent='⚠️ '+d.message;err.className='err-box show';return;}
@@ -1000,6 +1043,7 @@ function render(d){
 
   setTimeout(()=>{
     equalizeCungHeights();
+    autoScaleBan();
     Object.keys(arrowCPs).forEach(k=>delete arrowCPs[k]);
     drawAllArrows(lyTamList,huongTamList);
   },250);
@@ -1010,6 +1054,7 @@ function render(d){
 
   function _redrawArrows(){
     equalizeCungHeights();
+    autoScaleBan();
     Object.keys(arrowCPs).forEach(k=>delete arrowCPs[k]);
     drawAllArrows(_cachedArrowData.lyTamList,_cachedArrowData.huongTamList);
   }
@@ -1032,7 +1077,10 @@ function render(d){
   let _winRaf=null;
   window._arrowWinResize=()=>{
     if(_winRaf)cancelAnimationFrame(_winRaf);
-    _winRaf=requestAnimationFrame(()=>{setTimeout(_redrawArrows,50);});
+    _winRaf=requestAnimationFrame(()=>{
+      autoScaleBan();
+      setTimeout(_redrawArrows,50);
+    });
   };
   window.addEventListener('resize',window._arrowWinResize);
 }
