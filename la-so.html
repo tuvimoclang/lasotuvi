@@ -1,0 +1,991 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>Tạo Lá Số Tử Vi – Mộc Lang</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+<script src="tuvi-engine.js"></script>
+<style>
+:root{
+  --bg:#fdf6e3;--bg2:#f5ead0;--bg3:#ede0c0;
+  --surface:#ffffff;
+  --border:#8B4513;--border-lt:#c9a06044;
+  --red:#c0392b;--navy:#1a3a6b;--green:#1a6b3a;
+  --text:#3a2000;--text2:#5a3500;--text3:#8b6535;
+  --terra:#B5651D;
+}
+*{box-sizing:border-box;margin:0;padding:0;}
+body{background:var(--bg);color:var(--text);font-family:'Segoe UI',Arial,sans-serif;min-height:100vh;}
+.header{background:var(--bg2);border-bottom:2px solid var(--border);padding:14px 20px;display:flex;align-items:center;gap:14px;}
+.btn-back{display:inline-flex;align-items:center;gap:6px;color:var(--terra);font-size:13px;font-weight:700;text-decoration:none;padding:7px 16px;background:var(--bg);border:1px solid var(--terra);border-radius:50px;transition:background .2s;}
+.btn-back:hover{background:var(--bg3);}
+.header-title{flex:1;text-align:center;font-size:18px;font-weight:700;color:var(--text);}
+.page{max-width:960px;margin:0 auto;padding:28px 18px 60px;}
+
+/* FORM */
+.form-card{background:var(--surface);border:1px solid var(--border-lt);border-radius:16px;padding:26px;margin-bottom:28px;box-shadow:0 2px 12px rgba(139,69,19,.07);}
+.form-title{font-size:16px;font-weight:700;color:var(--text);margin-bottom:4px;}
+.form-sub{font-size:12px;color:var(--text3);margin-bottom:20px;}
+.form-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px;}
+@media(max-width:560px){.form-grid{grid-template-columns:1fr;}}
+.fg{display:flex;flex-direction:column;gap:5px;}
+.fg label{font-size:12px;font-weight:600;color:var(--text2);}
+.fg input,.fg select{background:var(--bg2);border:1px solid var(--border-lt);border-radius:8px;color:var(--text);font-family:inherit;font-size:13.5px;padding:9px 12px;outline:none;transition:border-color .2s;}
+.fg input:focus,.fg select:focus{border-color:var(--terra);}
+/* Ô ngày/tháng/năm tách riêng */
+.date-row{display:flex;gap:6px;}
+.date-row input{flex:1;text-align:center;}
+.date-row input:first-child{flex:0 0 52px;} /* Ngày */
+.date-row input:nth-child(2){flex:0 0 52px;} /* Tháng */
+.date-row input:last-child{flex:1;} /* Năm */
+.date-hint{font-size:10px;color:var(--text3);display:flex;gap:6px;margin-top:2px;}
+.date-hint span{flex:1;text-align:center;}
+.date-hint span:first-child{flex:0 0 52px;}
+.date-hint span:nth-child(2){flex:0 0 52px;}
+
+.btn-submit{width:100%;margin-top:16px;background:var(--terra);border:none;border-radius:50px;color:#fff;font-family:inherit;font-size:15px;font-weight:700;padding:13px;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;transition:background .2s,transform .15s;}
+.btn-submit:hover{background:#8B4513;}
+.btn-submit:disabled{opacity:.55;cursor:not-allowed;transform:none;}
+.err-box{display:none;background:#fff0f0;border:1px solid #e74c3c88;border-radius:8px;padding:10px 14px;margin-top:12px;font-size:13px;color:#c0392b;}
+.err-box.show{display:block;}
+
+/* RESULT */
+#result{display:none;}
+#result.show{display:block;}
+.info-bar,.info-bar2{display:grid;grid-template-columns:repeat(4,1fr);gap:6px 16px;background:var(--bg2);border:1px solid var(--border-lt);padding:10px 16px;border-radius:8px 8px 0 0;}
+.info-bar2{border-top:none;border-radius:0 0 8px 8px;margin-bottom:12px;}
+@media(max-width:600px){.info-bar,.info-bar2{grid-template-columns:repeat(2,1fr);}}
+.info-item .lbl{font-size:10px;font-weight:700;color:var(--text3);letter-spacing:.8px;text-transform:uppercase;}
+.info-item .val{font-size:13px;font-weight:600;color:var(--text);}
+.badges{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:10px;}
+.badge{font-size:11.5px;font-weight:700;padding:3px 11px;border-radius:50px;border:1px solid;}
+.action-row{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:8px;}
+.btn-act{background:var(--bg2);border:1px solid var(--terra);border-radius:6px;color:var(--terra);font-family:inherit;font-size:12px;font-weight:700;padding:6px 14px;cursor:pointer;transition:all .15s;text-decoration:none;display:inline-flex;align-items:center;gap:5px;}
+.btn-act:hover{background:var(--bg3);}
+.btn-act.primary{background:var(--terra);color:#fff;}
+.btn-act.primary:hover{background:#8B4513;}
+
+/* BÀN TỬ VI */
+.ban-outer{width:100%;overflow:visible;padding:62px 72px;}
+.ban-wrap{position:relative;overflow:visible;}
+.ban-tuvi{display:grid;grid-template-columns:repeat(4,1fr);gap:0;border:3px solid var(--border);background:var(--border);border-radius:3px;}
+#banSVG{position:absolute;overflow:visible;pointer-events:none;z-index:40;}
+
+.cung{background:var(--bg);padding:5px 5px 38px 5px;min-height:145px;position:relative;border:1px solid #8B451366;display:flex;flex-direction:column;align-items:stretch;cursor:pointer;}
+.cung:hover{background:#fdf0d0;}
+
+/* Tên cung — đỏ in hoa */
+.cung-chuc{width:100%;text-align:center;font-size:.80rem;font-weight:900;letter-spacing:.5px;text-transform:uppercase;color:var(--red);padding:2px 2px 4px;border-bottom:1px solid #8B451333;margin-bottom:3px;flex-shrink:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+
+/* Can chi — góc phải trên, đỏ */
+.cung-cc{position:absolute;top:4px;right:5px;font-size:.70rem;color:var(--red);font-weight:700;line-height:1.3;text-align:right;z-index:2;}
+
+/* Số tuổi đại hạn — góc trái trên, đỏ */
+.cung-dv{position:absolute;top:4px;left:5px;font-size:.78rem;color:var(--red);font-weight:900;z-index:2;}
+
+/* Sao chính — navy đậm */
+.sao-chinh-wrap{display:flex;flex-direction:column;align-items:center;gap:3px;margin-top:2px;width:100%;}
+.sao-phu-wrap{display:flex;flex-wrap:wrap;gap:2px;justify-content:flex-start;padding:0 2px;margin-top:2px;width:100%;}
+.sao.chinh{font-size:.88rem;font-weight:700;color:var(--navy);display:inline-block;white-space:nowrap;}
+.sao.phu{font-size:.78rem;font-weight:500;color:var(--green);display:inline-flex;align-items:center;gap:2px;white-space:nowrap;}
+.th{display:inline-flex;align-items:center;justify-content:center;width:22px;height:22px;border-radius:50%;font-size:.76rem;font-weight:900;margin-left:3px;vertical-align:middle;flex-shrink:0;}
+.th-A{background:#1a6b3a;color:#fff;border:2px solid #1a6b3a;}
+.th-B{background:#c0392b;color:#fff;border:2px solid #c0392b;}
+.th-C{background:#1a3a9b;color:#fff;border:2px solid #1a3a9b;}
+.th-D{background:#2c2c00;color:#f5c842;border:2px solid #8B6914;}
+
+/* Ô trung tâm */
+.cung.center{grid-column:2/4;grid-row:2/4;background:var(--bg);display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;min-height:0;border:1px solid #8B451366 !important;padding:14px 10px;cursor:default;}
+.ci-name{font-size:.95rem;font-weight:900;color:var(--text);margin-bottom:5px;}
+.ci-zalo{font-size:.85rem;color:var(--red);font-weight:900;display:block;margin-bottom:6px;}
+.ci-row{font-size:.82rem;color:var(--text2);display:block;line-height:1.7;}
+.ci-cuc{font-size:.9rem;font-weight:800;color:var(--terra);margin-top:6px;display:block;}
+
+/* Khối dưới cùng mỗi cung — gồm tên ĐV + dãy số LN */
+.cung-bottom{position:absolute;bottom:3px;right:5px;text-align:right;z-index:3;pointer-events:none;line-height:1.45;}
+.cung-bottom .dv-chuc{display:block;font-size:.68rem;font-weight:800;color:#8B4513;letter-spacing:.2px;}
+.cung-bottom .ln-label{display:block;font-size:.67rem;font-weight:700;color:#5a3000;word-break:break-all;}
+.ln-label{display:none;} /* ẩn mặc định, bật bằng nút */
+.show-ln .ln-label{display:block !important;}
+
+/* Tên cung lưu niên — góc dưới trái — mặc định ẨN, bật bằng nút */
+.ln-chuc{display:none;position:absolute;bottom:3px;left:5px;font-size:.65rem;font-weight:700;color:var(--green);text-align:left;line-height:1.4;z-index:3;pointer-events:none;}
+.ln-chuc.show{display:block;}
+
+/* ĐẠI HẠN TABLE */
+.daihan-wrap{background:var(--surface);border:1px solid var(--border-lt);border-radius:12px;padding:18px;margin-top:0;box-shadow:0 2px 8px rgba(139,69,19,.05);}
+.daihan-title{font-size:14px;font-weight:700;color:var(--text);margin-bottom:12px;}
+.daihan-scroll{overflow-x:auto;}
+.dh-table{width:100%;border-collapse:collapse;font-size:12.5px;}
+.dh-table th{background:var(--bg2);color:var(--text2);font-weight:700;padding:8px 10px;text-align:center;border-bottom:2px solid var(--border-lt);white-space:nowrap;}
+.dh-table td{padding:7px 10px;text-align:center;border-bottom:1px solid #c9a06033;color:var(--text);}
+.dh-table tr:hover td{background:var(--bg2);}
+.dh-table tr.cur td{background:#fff7e0;color:var(--terra);font-weight:700;}
+
+/* Dropdown autocomplete */
+.dropdown-list{position:absolute;z-index:999;background:#fff;border:1px solid var(--border-lt);border-radius:8px;box-shadow:0 4px 16px rgba(139,69,19,.12);max-height:220px;overflow-y:auto;width:100%;left:0;top:calc(100% + 2px);}
+.dropdown-item{padding:8px 12px;cursor:pointer;font-size:13px;color:var(--text);border-bottom:1px solid #f0e8d8;}
+.dropdown-item:last-child{border-bottom:none;}
+.dropdown-item:hover{background:var(--bg2);color:var(--terra);}
+.fg{position:relative;}
+.spin{border:3px solid rgba(255,255,255,.35);border-top-color:#fff;border-radius:50%;animation:sp .7s linear infinite;display:inline-block;width:18px;height:18px;}
+@keyframes sp{to{transform:rotate(360deg);}}
+@media print{.header,.form-card,.action-row,.daihan-wrap{display:none !important;}#result.show{display:block !important;}.ban-outer{padding:40px;}}
+</style>
+</head>
+<body>
+
+<div class="header">
+  <a href="index.html" class="btn-back">← Trang chủ</a>
+  <div class="header-title">🔮 Tạo Lá Số Tử Vi – Mộc Lang</div>
+  <div style="width:110px;"></div>
+</div>
+
+<div class="page">
+  <div class="form-card">
+    <div class="form-title">📋 Nhập thông tin lập lá số</div>
+    <div class="form-sub">Điền đầy đủ thông tin · Bấm Lập lá số để xem kết quả</div>
+    <div class="form-grid">
+      <div class="fg"><label>Họ tên / Nickname</label><input type="text" id="hoTen" placeholder="Nguyễn Văn A"></div>
+      <div class="fg"><label>Giới tính</label><select id="gioiTinh"><option value="nu">Nữ</option><option value="nam">Nam</option></select></div>
+
+      <div class="fg"><label>Loại lịch</label><select id="lichLoai" onchange="toggleNhuan()"><option value="duong">Dương lịch</option><option value="am">Âm lịch</option></select></div>
+      <div class="fg" id="nhuanGrp" style="display:none;"><label>Tháng nhuận?</label><select id="thangNhuan"><option value="0">Không</option><option value="1">Có – tháng nhuận</option></select></div>
+
+      <div class="fg">
+        <label>Ngày sinh (Ngày / Tháng / Năm)</label>
+        <div class="date-row">
+          <input type="number" id="ngayDD" placeholder="Ngày" min="1" max="31" value="2">
+          <input type="number" id="ngayMM" placeholder="Tháng" min="1" max="12" value="11">
+          <input type="number" id="ngayYYYY" placeholder="Năm sinh" min="1900" max="2100" value="1989">
+        </div>
+        <div class="date-hint"><span>Ngày</span><span>Tháng</span><span>Năm</span></div>
+      </div>
+
+      <div class="fg">
+        <label>Giờ sinh (24h)</label>
+        <div style="display:flex;gap:6px;align-items:center;">
+          <input type="number" id="gioH" min="0" max="23" value="18" placeholder="Giờ" style="width:70px;text-align:center;font-size:15px;font-weight:700;">
+          <span style="font-size:18px;font-weight:700;color:var(--text2);">:</span>
+          <input type="number" id="gioM" min="0" max="59" value="30" placeholder="Phút" style="width:70px;text-align:center;font-size:15px;font-weight:700;">
+        </div>
+      </div>
+      <div class="fg">
+        <label>Quốc gia</label>
+        <div style="position:relative;">
+          <input type="text" id="quocGiaInput" placeholder="VD: Việt Nam, Mỹ, Nhật Bản..." autocomplete="off" oninput="filterQuocGia()" onfocus="filterQuocGia()" onblur="setTimeout(()=>hideDropdown('dqg'),200)" style="padding-right:36px;width:100%;">
+          <button type="button" onclick="toggleDropdownQG()" tabindex="-1" style="position:absolute;right:8px;top:50%;transform:translateY(-50%);background:none;border:none;cursor:pointer;font-size:14px;color:var(--text3);padding:4px;">▼</button>
+          <div id="dqg" class="dropdown-list" style="display:none;"></div>
+        </div>
+      </div>
+      <div class="fg">
+        <label>Thành phố</label>
+        <div style="position:relative;">
+          <input type="text" id="thanhPhoInput" placeholder="VD: Hồ Chí Minh, Tokyo..." autocomplete="off" oninput="filterThanhPho()" onfocus="filterThanhPho()" onblur="setTimeout(()=>hideDropdown('dtp'),300)" style="padding-right:36px;width:100%;">
+          <button type="button" onclick="toggleDropdownTP()" tabindex="-1" style="position:absolute;right:8px;top:50%;transform:translateY(-50%);background:none;border:none;cursor:pointer;font-size:14px;color:var(--text3);padding:4px;">▼</button>
+          <div id="dtp" class="dropdown-list" style="display:none;"></div>
+        </div>
+      </div>
+      <div class="fg" style="grid-column:1/-1;">
+        <label>Múi giờ (tự động cập nhật)</label>
+        <div style="display:flex;gap:10px;align-items:center;">
+          <span id="muiGioHien" style="font-size:14px;font-weight:800;color:var(--terra);min-width:70px;">UTC+7</span>
+          <span style="font-size:11px;color:var(--text3);">Hoặc nhập tay:</span>
+          <input type="number" id="muiGio" step="0.5" min="-12" max="14" value="7" style="width:75px;font-size:13px;padding:4px 8px;background:var(--bg2);border:1px solid var(--border-lt);border-radius:6px;color:var(--text);" onchange="document.getElementById('muiGioHien').textContent='UTC'+(+this.value>=0?'+':'')+this.value">
+        </div>
+      </div>
+
+      <div class="fg">
+        <label>Năm xem vận hạn</label>
+        <input type="number" id="namXem" min="1950" max="2100" value="" placeholder="Để trống = năm hiện tại (2026)">
+      </div>
+    </div>
+    <button class="btn-submit" id="btnTao" onclick="lapLaSo()"><span>🔮 Lập lá số</span></button>
+    <div class="err-box" id="errBox"></div>
+  </div>
+
+  <div id="result">
+    <div class="info-bar" id="ib1"></div>
+    <div class="info-bar2" id="ib2"></div>
+    <div class="badges" id="badges"></div>
+    <div class="action-row">
+      <button class="btn-act" id="btnSave" onclick="saveLaSo()">💾 Lưu ảnh lá số</button>
+      <button class="btn-act" id="btnArrow" onclick="toggleArrows()">👁 Ẩn mũi tên</button>
+      <button class="btn-act" id="btnLuuNien" onclick="toggleLuuNien()">📅 Hiện lưu niên</button>
+      <a href="https://zalo.me/0909794441" class="btn-act primary" target="_blank">📱 Nhờ Ngọc luận giải</a>
+    </div>
+    <div class="ban-outer">
+      <div class="ban-wrap" id="banWrap">
+        <div class="ban-tuvi" id="banTuvi"></div>
+      </div>
+    </div>
+    <div class="daihan-wrap">
+      <div class="daihan-title">📅 Bảng Đại Hạn</div>
+      <div class="daihan-scroll"><table class="dh-table" id="dhTable"></table></div>
+    </div>
+  </div>
+</div>
+
+<script>
+// ── HẰNG SỐ ──
+const DC=["Tý","Sửu","Dần","Mão","Thìn","Tỵ","Ngọ","Mùi","Thân","Dậu","Tuất","Hợi"];
+const LAYOUT=[[5,6,7,8],[4,-1,-1,9],[3,-1,-1,10],[2,1,0,11]];
+const TEN_CHUC=["MỆNH","HUYNH ĐỆ","PHU THÊ","TỬ NỮ","TÀI BẠCH","TẬT ÁCH","THIÊN DI","GIAO HỮU","SỰ NGHIỆP","ĐIỀN TRẠCH","PHÚC ĐỨC","PHỤ MẪU"];
+const TU_HOA={"Giáp":{loc:"Liêm Trinh",quyen:"Phá Quân",khoa:"Vũ Khúc",ki:"Thái Dương"},"Ất":{loc:"Thiên Cơ",quyen:"Thiên Lương",khoa:"Tử Vi",ki:"Thái Âm"},"Bính":{loc:"Thiên Đồng",quyen:"Thiên Cơ",khoa:"Văn Xương",ki:"Liêm Trinh"},"Đinh":{loc:"Thái Âm",quyen:"Thiên Đồng",khoa:"Thiên Cơ",ki:"Cự Môn"},"Mậu":{loc:"Tham Lang",quyen:"Thái Âm",khoa:"Hữu Bật",ki:"Thiên Cơ"},"Kỷ":{loc:"Vũ Khúc",quyen:"Tham Lang",khoa:"Thiên Lương",ki:"Văn Khúc"},"Canh":{loc:"Thái Dương",quyen:"Vũ Khúc",khoa:"Thái Âm",ki:"Thiên Đồng"},"Tân":{loc:"Cự Môn",quyen:"Thái Dương",khoa:"Văn Khúc",ki:"Văn Xương"},"Nhâm":{loc:"Thiên Lương",quyen:"Tử Vi",khoa:"Tả Phụ",ki:"Vũ Khúc"},"Quý":{loc:"Phá Quân",quyen:"Cự Môn",khoa:"Thái Âm",ki:"Tham Lang"}};
+const KY_COLOR={A:'#00cc55',B:'#dd0000',C:'#1a7fff',D:'#c9a84c'};
+const KY_TXT={A:'#000',B:'#fff',C:'#fff',D:'#000'};
+const CAN_ABB={Giáp:'G',Ất:'Ất',Bính:'B',Đinh:'Đ',Mậu:'Mậu',Kỷ:'Kỷ',Canh:'C',Tân:'Tân',Nhâm:'N',Quý:'Q'};
+
+// Lưu niên — tên cung ngắn
+const LN_VONG_NGAN=['Mệnh LN','P.Mẫu LN','Phúc LN','Điền LN','Sự LN','Giao LN','Di LN','Tật LN','Tài LN','Tử LN','Phu LN','Huynh LN'];
+
+const arrowCPs={};
+let showArrowsFlag=true;
+let _cachedArrowData=null;
+let _chucMapGlobal={};
+
+// ── UTILS ──
+function abbCC(cc){if(!cc)return'';const p=cc.trim().split(' ');if(p.length===2)return(CAN_ABB[p[0]]||p[0][0])+'.'+p[1];return cc;}
+function canChiNam(y){const cn=["Giáp","Ất","Bính","Đinh","Mậu","Kỷ","Canh","Tân","Nhâm","Quý"],cc=DC;return cn[(y+6)%10]+' '+cc[(y+8)%12];}
+function buildTHMap(str){const can=str?.trim()?.split(' ')[0],th=TU_HOA[can]||{},m={};if(th.loc)m[th.loc]='A';if(th.quyen)m[th.quyen]='B';if(th.khoa)m[th.khoa]='C';if(th.ki)m[th.ki]='D';return m;}
+function getRC(idx){for(let r=0;r<4;r++)for(let c=0;c<4;c++)if(LAYOUT[r][c]===idx)return{r,c};return null;}
+function lyTamDir(idx){const rc=getRC(idx);if(!rc)return'down';if(rc.r===0)return'up';if(rc.r===3)return'down';if(rc.c===0)return'left';if(rc.c===3)return'right';return'down';}
+
+// ── LƯU NIÊN ──
+// Dãy số tuổi lưu niên cho cung (như ảnh mẫu: 13·25·37·49...)
+function luuNien(chiCung,chiNamSinh){
+  let s=(chiCung-chiNamSinh+12)%12+1;
+  if(s>12)s-=12;
+  const a=[];for(let t=s;t<=97;t+=12)a.push(t);
+  return a.join('·');
+}
+
+// Tên cung lưu niên cho ô (Mệnh LN, Tài LN...)
+function luuNienCungTen(idx,chiThaituee){
+  if(chiThaituee<0)return'';
+  const diff=(idx-chiThaituee+12)%12;
+  return LN_VONG_NGAN[diff];
+}
+
+// Tháng lưu niên cho từng cung
+function tinhThangLuuNien(chiThaituee,thangSinh,chiGioSinh){
+  if(chiThaituee<0||thangSinh<1||chiGioSinh<0)return{};
+  const cungMenhLN=chiThaituee;
+  const cungGioTy=(cungMenhLN-thangSinh+1+120)%12;
+  const cungThang1=(cungGioTy+chiGioSinh)%12;
+  const result={};
+  for(let t=0;t<12;t++) result[(cungThang1+t)%12]='T'+(t+1);
+  return result;
+}
+
+// ── DỮ LIỆU QUỐC GIA / THÀNH PHỐ ──
+const CITY_DATA=[
+  // Việt Nam
+  {qg:'Việt Nam',flag:'🇻🇳',city:'Hà Nội',tz:7},
+  {qg:'Việt Nam',flag:'🇻🇳',city:'Hồ Chí Minh',tz:7},
+  {qg:'Việt Nam',flag:'🇻🇳',city:'Đà Nẵng',tz:7},
+  {qg:'Việt Nam',flag:'🇻🇳',city:'Huế',tz:7},
+  {qg:'Việt Nam',flag:'🇻🇳',city:'Cần Thơ',tz:7},
+  {qg:'Việt Nam',flag:'🇻🇳',city:'Hải Phòng',tz:7},
+  {qg:'Việt Nam',flag:'🇻🇳',city:'Nha Trang',tz:7},
+  {qg:'Việt Nam',flag:'🇻🇳',city:'Đà Lạt',tz:7},
+  {qg:'Việt Nam',flag:'🇻🇳',city:'Vũng Tàu',tz:7},
+  {qg:'Việt Nam',flag:'🇻🇳',city:'Bình Dương',tz:7},
+  {qg:'Việt Nam',flag:'🇻🇳',city:'Biên Hòa',tz:7},
+  {qg:'Việt Nam',flag:'🇻🇳',city:'Buôn Ma Thuột',tz:7},
+  {qg:'Việt Nam',flag:'🇻🇳',city:'Quy Nhơn',tz:7},
+  {qg:'Việt Nam',flag:'🇻🇳',city:'Vinh',tz:7},
+  {qg:'Việt Nam',flag:'🇻🇳',city:'Rạch Giá',tz:7},
+  // Trung Quốc
+  {qg:'Trung Quốc',flag:'🇨🇳',city:'Bắc Kinh',tz:8},
+  {qg:'Trung Quốc',flag:'🇨🇳',city:'Thượng Hải',tz:8},
+  {qg:'Trung Quốc',flag:'🇨🇳',city:'Quảng Châu',tz:8},
+  {qg:'Trung Quốc',flag:'🇨🇳',city:'Thâm Quyến',tz:8},
+  {qg:'Hồng Kông',flag:'🇭🇰',city:'Hồng Kông',tz:8},
+  {qg:'Đài Loan',flag:'🇹🇼',city:'Đài Bắc',tz:8},
+  // Nhật
+  {qg:'Nhật Bản',flag:'🇯🇵',city:'Tokyo',tz:9},
+  {qg:'Nhật Bản',flag:'🇯🇵',city:'Osaka',tz:9},
+  {qg:'Nhật Bản',flag:'🇯🇵',city:'Kyoto',tz:9},
+  {qg:'Nhật Bản',flag:'🇯🇵',city:'Hiroshima',tz:9},
+  // Hàn Quốc
+  {qg:'Hàn Quốc',flag:'🇰🇷',city:'Seoul',tz:9},
+  {qg:'Hàn Quốc',flag:'🇰🇷',city:'Busan',tz:9},
+  // Singapore / Malaysia
+  {qg:'Singapore',flag:'🇸🇬',city:'Singapore',tz:8},
+  {qg:'Malaysia',flag:'🇲🇾',city:'Kuala Lumpur',tz:8},
+  {qg:'Malaysia',flag:'🇲🇾',city:'Penang',tz:8},
+  {qg:'Malaysia',flag:'🇲🇾',city:'Johor Bahru',tz:8},
+  // Thái / Campuchia / Lào / Myanmar
+  {qg:'Thái Lan',flag:'🇹🇭',city:'Bangkok',tz:7},
+  {qg:'Thái Lan',flag:'🇹🇭',city:'Phuket',tz:7},
+  {qg:'Thái Lan',flag:'🇹🇭',city:'Chiang Mai',tz:7},
+  {qg:'Campuchia',flag:'🇰🇭',city:'Phnom Penh',tz:7},
+  {qg:'Lào',flag:'🇱🇦',city:'Vientiane',tz:7},
+  {qg:'Myanmar',flag:'🇲🇲',city:'Yangon',tz:6.5},
+  // Indonesia / Philippines
+  {qg:'Indonesia',flag:'🇮🇩',city:'Jakarta',tz:7},
+  {qg:'Indonesia',flag:'🇮🇩',city:'Bali',tz:8},
+  {qg:'Indonesia',flag:'🇮🇩',city:'Surabaya',tz:7},
+  {qg:'Philippines',flag:'🇵🇭',city:'Manila',tz:8},
+  {qg:'Philippines',flag:'🇵🇭',city:'Cebu',tz:8},
+  // Ấn Độ
+  {qg:'Ấn Độ',flag:'🇮🇳',city:'New Delhi',tz:5.5},
+  {qg:'Ấn Độ',flag:'🇮🇳',city:'Mumbai',tz:5.5},
+  {qg:'Ấn Độ',flag:'🇮🇳',city:'Bangalore',tz:5.5},
+  {qg:'Ấn Độ',flag:'🇮🇳',city:'Chennai',tz:5.5},
+  {qg:'Ấn Độ',flag:'🇮🇳',city:'Kolkata',tz:5.5},
+  // Úc
+  {qg:'Úc',flag:'🇦🇺',city:'Sydney',tz:10},
+  {qg:'Úc',flag:'🇦🇺',city:'Melbourne',tz:10},
+  {qg:'Úc',flag:'🇦🇺',city:'Brisbane',tz:10},
+  {qg:'Úc',flag:'🇦🇺',city:'Perth',tz:8},
+  {qg:'Úc',flag:'🇦🇺',city:'Adelaide',tz:9.5},
+  {qg:'Úc',flag:'🇦🇺',city:'Darwin',tz:9.5},
+  {qg:'New Zealand',flag:'🇳🇿',city:'Auckland',tz:12},
+  {qg:'New Zealand',flag:'🇳🇿',city:'Wellington',tz:12},
+  // Châu Âu
+  {qg:'Anh',flag:'🇬🇧',city:'London',tz:0},
+  {qg:'Pháp',flag:'🇫🇷',city:'Paris',tz:1},
+  {qg:'Đức',flag:'🇩🇪',city:'Berlin',tz:1},
+  {qg:'Đức',flag:'🇩🇪',city:'Munich',tz:1},
+  {qg:'Hà Lan',flag:'🇳🇱',city:'Amsterdam',tz:1},
+  {qg:'Bỉ',flag:'🇧🇪',city:'Brussels',tz:1},
+  {qg:'Tây Ban Nha',flag:'🇪🇸',city:'Madrid',tz:1},
+  {qg:'Tây Ban Nha',flag:'🇪🇸',city:'Barcelona',tz:1},
+  {qg:'Ý',flag:'🇮🇹',city:'Rome',tz:1},
+  {qg:'Ý',flag:'🇮🇹',city:'Milan',tz:1},
+  {qg:'Áo',flag:'🇦🇹',city:'Vienna',tz:1},
+  {qg:'Thụy Sĩ',flag:'🇨🇭',city:'Zurich',tz:1},
+  {qg:'Thụy Sĩ',flag:'🇨🇭',city:'Geneva',tz:1},
+  {qg:'Thụy Điển',flag:'🇸🇪',city:'Stockholm',tz:1},
+  {qg:'Na Uy',flag:'🇳🇴',city:'Oslo',tz:1},
+  {qg:'Đan Mạch',flag:'🇩🇰',city:'Copenhagen',tz:1},
+  {qg:'Phần Lan',flag:'🇫🇮',city:'Helsinki',tz:2},
+  {qg:'Hy Lạp',flag:'🇬🇷',city:'Athens',tz:2},
+  {qg:'Ba Lan',flag:'🇵🇱',city:'Warsaw',tz:1},
+  {qg:'Ukraine',flag:'🇺🇦',city:'Kyiv',tz:2},
+  {qg:'Romania',flag:'🇷🇴',city:'Bucharest',tz:2},
+  {qg:'Séc',flag:'🇨🇿',city:'Prague',tz:1},
+  {qg:'Hungary',flag:'🇭🇺',city:'Budapest',tz:1},
+  {qg:'Bồ Đào Nha',flag:'🇵🇹',city:'Lisbon',tz:0},
+  {qg:'Ireland',flag:'🇮🇪',city:'Dublin',tz:0},
+  {qg:'Nga',flag:'🇷🇺',city:'Moscow',tz:3},
+  {qg:'Nga',flag:'🇷🇺',city:'St. Petersburg',tz:3},
+  {qg:'Thổ Nhĩ Kỳ',flag:'🇹🇷',city:'Istanbul',tz:3},
+  {qg:'Thổ Nhĩ Kỳ',flag:'🇹🇷',city:'Ankara',tz:3},
+  // Mỹ
+  {qg:'Mỹ',flag:'🇺🇸',city:'New York',tz:-5},
+  {qg:'Mỹ',flag:'🇺🇸',city:'Boston',tz:-5},
+  {qg:'Mỹ',flag:'🇺🇸',city:'Miami',tz:-5},
+  {qg:'Mỹ',flag:'🇺🇸',city:'Washington DC',tz:-5},
+  {qg:'Mỹ',flag:'🇺🇸',city:'Philadelphia',tz:-5},
+  {qg:'Mỹ',flag:'🇺🇸',city:'Atlanta',tz:-5},
+  {qg:'Mỹ',flag:'🇺🇸',city:'Chicago',tz:-6},
+  {qg:'Mỹ',flag:'🇺🇸',city:'Houston',tz:-6},
+  {qg:'Mỹ',flag:'🇺🇸',city:'Dallas',tz:-6},
+  {qg:'Mỹ',flag:'🇺🇸',city:'Minneapolis',tz:-6},
+  {qg:'Mỹ',flag:'🇺🇸',city:'Denver',tz:-7},
+  {qg:'Mỹ',flag:'🇺🇸',city:'Phoenix',tz:-7},
+  {qg:'Mỹ',flag:'🇺🇸',city:'Los Angeles',tz:-8},
+  {qg:'Mỹ',flag:'🇺🇸',city:'San Francisco',tz:-8},
+  {qg:'Mỹ',flag:'🇺🇸',city:'Seattle',tz:-8},
+  {qg:'Mỹ',flag:'🇺🇸',city:'Las Vegas',tz:-8},
+  {qg:'Mỹ',flag:'🇺🇸',city:'Portland',tz:-8},
+  {qg:'Mỹ',flag:'🇺🇸',city:'Honolulu',tz:-10},
+  {qg:'Mỹ',flag:'🇺🇸',city:'Anchorage',tz:-9},
+  // Canada
+  {qg:'Canada',flag:'🇨🇦',city:'Toronto',tz:-5},
+  {qg:'Canada',flag:'🇨🇦',city:'Ottawa',tz:-5},
+  {qg:'Canada',flag:'🇨🇦',city:'Montreal',tz:-5},
+  {qg:'Canada',flag:'🇨🇦',city:'Halifax',tz:-4},
+  {qg:'Canada',flag:'🇨🇦',city:'Winnipeg',tz:-6},
+  {qg:'Canada',flag:'🇨🇦',city:'Calgary',tz:-7},
+  {qg:'Canada',flag:'🇨🇦',city:'Vancouver',tz:-8},
+  // Nam Mỹ
+  {qg:'Brazil',flag:'🇧🇷',city:'São Paulo',tz:-3},
+  {qg:'Brazil',flag:'🇧🇷',city:'Rio de Janeiro',tz:-3},
+  {qg:'Brazil',flag:'🇧🇷',city:'Brasília',tz:-3},
+  {qg:'Argentina',flag:'🇦🇷',city:'Buenos Aires',tz:-3},
+  {qg:'Peru',flag:'🇵🇪',city:'Lima',tz:-5},
+  {qg:'Colombia',flag:'🇨🇴',city:'Bogotá',tz:-5},
+  {qg:'Chile',flag:'🇨🇱',city:'Santiago',tz:-4},
+  {qg:'Mexico',flag:'🇲🇽',city:'Mexico City',tz:-6},
+  // Trung Đông
+  {qg:'UAE',flag:'🇦🇪',city:'Dubai',tz:4},
+  {qg:'UAE',flag:'🇦🇪',city:'Abu Dhabi',tz:4},
+  {qg:'Ả Rập Saudi',flag:'🇸🇦',city:'Riyadh',tz:3},
+  {qg:'Ả Rập Saudi',flag:'🇸🇦',city:'Jeddah',tz:3},
+  {qg:'Iran',flag:'🇮🇷',city:'Tehran',tz:3.5},
+  {qg:'Israel',flag:'🇮🇱',city:'Tel Aviv',tz:2},
+  {qg:'Qatar',flag:'🇶🇦',city:'Doha',tz:3},
+  {qg:'Kuwait',flag:'🇰🇼',city:'Kuwait City',tz:3},
+  // Châu Phi
+  {qg:'Ai Cập',flag:'🇪🇬',city:'Cairo',tz:2},
+  {qg:'Nam Phi',flag:'🇿🇦',city:'Johannesburg',tz:2},
+  {qg:'Nam Phi',flag:'🇿🇦',city:'Cape Town',tz:2},
+  {qg:'Nigeria',flag:'🇳🇬',city:'Lagos',tz:1},
+  {qg:'Kenya',flag:'🇰🇪',city:'Nairobi',tz:3},
+  {qg:'Ethiopia',flag:'🇪🇹',city:'Addis Ababa',tz:3},
+  {qg:'Ghana',flag:'🇬🇭',city:'Accra',tz:0},
+  {qg:'Morocco',flag:'🇲🇦',city:'Casablanca',tz:1},
+  // Khác
+  {qg:'Pakistan',flag:'🇵🇰',city:'Karachi',tz:5},
+  {qg:'Bangladesh',flag:'🇧🇩',city:'Dhaka',tz:6},
+  {qg:'Nepal',flag:'🇳🇵',city:'Kathmandu',tz:5.75},
+  {qg:'Sri Lanka',flag:'🇱🇰',city:'Colombo',tz:5.5},
+  {qg:'Mông Cổ',flag:'🇲🇳',city:'Ulaanbaatar',tz:8},
+  {qg:'Kazakhstan',flag:'🇰🇿',city:'Almaty',tz:6},
+  {qg:'Uzbekistan',flag:'🇺🇿',city:'Tashkent',tz:5},
+];
+
+// Danh sách quốc gia unique (object có name + flag)
+const QUOC_GIA_LIST=[...new Map(CITY_DATA.map(d=>[d.qg,{name:d.qg,flag:d.flag}])).values()];
+
+let _selQG='', _selCity='';
+
+function normStr(s){return s.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'');}
+
+function filterQuocGia(){
+  const q=normStr(document.getElementById('quocGiaInput').value||'');
+  const dd=document.getElementById('dqg');
+  const matches=QUOC_GIA_LIST.filter(x=>normStr(x.name).includes(q)||normStr(x.flag+' '+x.name).includes(q)).slice(0,15);
+  if(!matches.length){dd.style.display='none';return;}
+  dd.innerHTML=matches.map(x=>`<div class="dropdown-item" onmousedown="selectQuocGia('${x.name.replace(/'/g,"&#39;")}')">${x.flag} ${x.name}</div>`).join('');
+  dd.style.display='block';
+}
+
+function selectQuocGia(qg){
+  const info=QUOC_GIA_LIST.find(x=>x.name===qg);
+  document.getElementById('quocGiaInput').value=(info?info.flag+' ':'')+qg;
+  _selQG=qg;
+  hideDropdown('dqg');
+  document.getElementById('thanhPhoInput').value='';
+  setTimeout(()=>{
+    const dd=document.getElementById('dtp');
+    const cities=CITY_DATA.filter(d=>d.qg===qg);
+    if(!cities.length){dd.style.display='none';return;}
+    dd.innerHTML=cities.map(d=>`<div class="dropdown-item" onmousedown="selectCityByIdx(${CITY_DATA.indexOf(d)})">${d.flag} ${d.city} <span style="color:var(--text3);font-size:11px;">UTC${d.tz>=0?'+':''}${d.tz}</span></div>`).join('');
+    dd.style.display='block';
+    document.getElementById('thanhPhoInput').focus();
+  },250);
+}
+
+function filterThanhPho(){
+  const q=normStr(document.getElementById('thanhPhoInput').value||'');
+  const dd=document.getElementById('dtp');
+  let matches=CITY_DATA.filter(d=>{
+    // Nếu đã chọn quốc gia, chỉ lọc trong quốc gia đó
+    if(_selQG && d.qg!==_selQG) return false;
+    // Nếu không có từ khóa, hiện tất cả
+    if(!q) return true;
+    return normStr(d.city).includes(q)||normStr(d.qg).includes(q);
+  }).slice(0,20);
+  if(!matches.length){dd.style.display='none';return;}
+  dd.innerHTML=matches.map(d=>`<div class="dropdown-item" onmousedown="selectCityByIdx(${CITY_DATA.indexOf(d)})">${d.flag} ${d.city} <span style="color:var(--text3);font-size:11px;">UTC${d.tz>=0?'+':''}${d.tz}</span></div>`).join('');
+  dd.style.display='block';
+}
+
+function selectCityByIdx(idx){
+  const d=CITY_DATA[idx];
+  if(!d)return;
+  selectCity(d);
+}
+
+function selectCity(d){
+  document.getElementById('thanhPhoInput').value=d.city;
+  document.getElementById('quocGiaInput').value=d.flag+' '+d.qg;
+  _selQG=d.qg; _selCity=d.city;
+  setTz(d.tz);
+  hideDropdown('dtp');
+  hideDropdown('dqg');
+}
+
+function setTz(tz){
+  document.getElementById('muiGio').value=tz;
+  document.getElementById('muiGioHien').textContent='UTC'+(tz>=0?'+':'')+tz;
+}
+
+function toggleDropdownQG(){
+  const dd=document.getElementById('dqg');
+  if(dd.style.display==='none'){
+    document.getElementById('quocGiaInput').value='';
+    filterQuocGia();
+    document.getElementById('quocGiaInput').focus();
+  } else {
+    hideDropdown('dqg');
+  }
+}
+
+function toggleDropdownTP(){
+  const dd=document.getElementById('dtp');
+  if(dd.style.display==='none'){
+    document.getElementById('thanhPhoInput').value='';
+    filterThanhPho();
+    document.getElementById('thanhPhoInput').focus();
+  } else {
+    hideDropdown('dtp');
+  }
+}
+
+function hideDropdown(id){
+  const el=document.getElementById(id);
+  if(el)el.style.display='none';
+}
+
+// Khởi tạo mặc định Hà Nội
+(function(){selectCity(CITY_DATA[0]);})();
+
+function onCityChange(){}
+
+function toggleNhuan(){document.getElementById('nhuanGrp').style.display=document.getElementById('lichLoai').value==='am'?'block':'none';}
+
+let luuNienMode=false;
+function toggleLuuNien(){
+  luuNienMode=!luuNienMode;
+  document.getElementById('btnLuuNien').textContent=luuNienMode?'📅 Ẩn lưu niên':'📅 Hiện lưu niên';
+  document.getElementById('btnLuuNien').classList.toggle('active',luuNienMode);
+  document.querySelectorAll('.ln-chuc').forEach(el=>{
+    el.style.display=luuNienMode?'block':'none';
+  });
+}
+
+function toggleArrows(){
+  showArrowsFlag=!showArrowsFlag;
+  document.getElementById('btnArrow').textContent=showArrowsFlag?'👁 Ẩn mũi tên':'👁 Hiện mũi tên';
+  document.querySelectorAll('#banSVG [data-huongtam]').forEach(g=>g.style.display=showArrowsFlag?'':'none');
+  document.querySelectorAll('#banSVG .arrow-lytam').forEach(el=>el.style.display=showArrowsFlag?'':'none');
+}
+
+function equalizeCungHeights(){
+  const cungs=document.querySelectorAll('.ban-tuvi .cung:not(.center)');
+  cungs.forEach(el=>el.style.minHeight='');
+  let maxH=0;cungs.forEach(el=>{if(el.offsetHeight>maxH)maxH=el.offsetHeight;});
+  cungs.forEach(el=>el.style.minHeight=maxH+'px');
+}
+
+// ── DRAW ARROWS ──
+function drawAllArrows(lyTamList,huongTamList){
+  const wrap=document.getElementById('banWrap');if(!wrap)return;
+  const outer=document.querySelector('.ban-outer');if(!outer)return;
+  document.getElementById('banSVG')?.remove();
+
+  // SVG đặt trong ban-outer, tọa độ = tọa độ của ban-outer
+  const OW=outer.offsetWidth, OH=outer.offsetHeight;
+  const ns='http://www.w3.org/2000/svg';
+  const svg=document.createElementNS(ns,'svg');
+  svg.id='banSVG';
+  svg.setAttribute('width',OW);svg.setAttribute('height',OH);
+  svg.style.cssText='position:absolute;top:0;left:0;width:100%;height:100%;overflow:visible;pointer-events:none;z-index:40;';
+  const defs=document.createElementNS(ns,'defs');
+  ['A','B','C','D'].forEach(k=>{const m=document.createElementNS(ns,'marker');m.setAttribute('id',`mk-${k}`);m.setAttribute('markerWidth','9');m.setAttribute('markerHeight','7');m.setAttribute('refX','8');m.setAttribute('refY','3.5');m.setAttribute('orient','auto');const p=document.createElementNS(ns,'path');p.setAttribute('d','M0,0 L9,3.5 L0,7 Z');p.setAttribute('fill',KY_COLOR[k]);m.appendChild(p);defs.appendChild(m);});
+  svg.appendChild(defs);
+  // Đặt SVG vào ban-outer (không phải ban-wrap)
+  outer.style.position='relative';
+  outer.appendChild(svg);
+
+  // localRect: tính tọa độ cung relative to ban-outer
+  function localRect(el){
+    let lx=0,ly=0,cur=el;
+    while(cur&&cur!==outer){lx+=cur.offsetLeft;ly+=cur.offsetTop;cur=cur.offsetParent;}
+    return{l:lx,t:ly,r:lx+el.offsetWidth,b:ly+el.offsetHeight,cx:lx+el.offsetWidth/2,cy:ly+el.offsetHeight/2};
+  }
+  function intersect(p1,p2,rect){const dx=p2[0]-p1[0],dy=p2[1]-p1[1];const segs=[[rect.l,rect.t,rect.r,rect.t],[rect.l,rect.b,rect.r,rect.b],[rect.l,rect.t,rect.l,rect.b],[rect.r,rect.t,rect.r,rect.b]];let best=null,bestT=Infinity;segs.forEach(([ax,ay,bx,by])=>{const ex=bx-ax,ey=by-ay,den=dx*ey-dy*ex;if(Math.abs(den)<1e-9)return;const t=((ax-p1[0])*ey-(ay-p1[1])*ex)/den,u=((ax-p1[0])*dy-(ay-p1[1])*dx)/den;if(t>0.01&&t<bestT&&u>=-0.01&&u<=1.01){bestT=t;best=[p1[0]+t*dx,p1[1]+t*dy];}});return best;}
+
+  function addLyTamArrow(sx,sy,ex,ey,k,showLabel){
+    const ang=Math.atan2(ey-sy,ex-sx),HEAD=13;
+    const hit=document.createElementNS(ns,'line');hit.setAttribute('x1',sx);hit.setAttribute('y1',sy);hit.setAttribute('x2',ex+Math.cos(ang)*(HEAD+18));hit.setAttribute('y2',ey+Math.sin(ang)*(HEAD+18));hit.setAttribute('stroke','transparent');hit.setAttribute('stroke-width','20');hit.style.pointerEvents='stroke';hit.className='arrow-lytam';
+    const line=document.createElementNS(ns,'line');line.setAttribute('x1',sx);line.setAttribute('y1',sy);line.setAttribute('x2',ex);line.setAttribute('y2',ey);line.setAttribute('stroke',KY_COLOR[k]);line.setAttribute('stroke-width','3.5');line.className='arrow-lytam';line.style.pointerEvents='none';
+    const tipX=ex+Math.cos(ang)*HEAD,tipY=ey+Math.sin(ang)*HEAD;
+    const h1x=ex-Math.sin(ang)*(HEAD*.65),h1y=ey+Math.cos(ang)*(HEAD*.65);
+    const h2x=ex+Math.sin(ang)*(HEAD*.65),h2y=ey-Math.cos(ang)*(HEAD*.65);
+    const arrow=document.createElementNS(ns,'path');arrow.setAttribute('d',`M${tipX},${tipY} L${h1x},${h1y} L${h2x},${h2y} Z`);arrow.setAttribute('fill',KY_COLOR[k]);arrow.setAttribute('stroke',KY_COLOR[k]);arrow.setAttribute('stroke-width','1.5');arrow.setAttribute('stroke-linejoin','round');arrow.style.pointerEvents='none';arrow.className='arrow-lytam';
+    svg.appendChild(hit);svg.appendChild(line);svg.appendChild(arrow);
+    if(showLabel){const isUp=Math.sin(ang)<-.5,isDown=Math.sin(ang)>.5;let lblX,lblY;if(isUp){lblX=tipX+22;lblY=tipY+6;}else if(isDown){lblX=tipX+23;lblY=tipY;}else{lblX=tipX;lblY=tipY+25;}const txt=document.createElementNS(ns,'text');txt.setAttribute('x',String(lblX));txt.setAttribute('y',String(lblY));txt.setAttribute('text-anchor','middle');txt.setAttribute('font-size','19');txt.setAttribute('fill',KY_COLOR[k]);txt.setAttribute('font-weight','300');txt.style.filter='drop-shadow(0 0 3px '+KY_COLOR[k]+')';txt.style.pointerEvents='none';txt.textContent=k;txt.className='arrow-lytam';svg.appendChild(txt);}
+  }
+
+  function addHuongTamArrow(x1,y1,x2,y2,k,cpKey,badgeDist=20){
+    if(!arrowCPs[cpKey])arrowCPs[cpKey]={p1x:x1,p1y:y1,p2x:x2,p2y:y2,cx:(x1+x2)/2,cy:(y1+y2)/2};
+    const st=arrowCPs[cpKey];
+    const g=document.createElementNS(ns,'g');g.setAttribute('data-huongtam','1');if(!showArrowsFlag)g.style.display='none';
+    const pathEl=document.createElementNS(ns,'path');
+    const hitPath=document.createElementNS(ns,'path');
+    const bc=document.createElementNS(ns,'circle');
+    bc.setAttribute('r','10');bc.setAttribute('fill',KY_COLOR[k]);
+    bc.setAttribute('stroke','#fff');bc.setAttribute('stroke-width','1.5');
+    bc.style.pointerEvents='none';
+    const bt=document.createElementNS(ns,'text');
+    bt.setAttribute('text-anchor','middle');bt.setAttribute('dominant-baseline','central');
+    bt.setAttribute('font-size','10');bt.setAttribute('fill',KY_TXT[k]);
+    bt.setAttribute('font-weight','900');bt.textContent=k;bt.style.pointerEvents='none';
+
+    function update(){
+      const ang=Math.atan2(st.p2y-st.cy,st.p2x-st.cx);
+      // Đường dừng trước đầu nhọn 6px
+      const ex=st.p2x-Math.cos(ang)*6, ey=st.p2y-Math.sin(ang)*6;
+      const d=`M ${st.p1x} ${st.p1y} Q ${st.cx} ${st.cy} ${ex} ${ey}`;
+      pathEl.setAttribute('d',d); hitPath.setAttribute('d',d);
+
+      // Tính hướng từ p1→p2 (vector dọc đường)
+      const dx=st.p2x-st.p1x, dy=st.p2y-st.p1y;
+      const len=Math.sqrt(dx*dx+dy*dy)||1;
+      const ux=dx/len, uy=dy/len; // unit vector p1→p2
+
+      // Badge nằm trên đường, lùi từ p2 về p1 đúng badgeDist px
+      const bx=st.p2x - ux*badgeDist;
+      const by=st.p2y - uy*badgeDist;
+      bc.setAttribute('cx',bx); bc.setAttribute('cy',by);
+      bt.setAttribute('x',bx);  bt.setAttribute('y',by);
+    }
+
+    pathEl.setAttribute('fill','none');pathEl.setAttribute('stroke',KY_COLOR[k]);
+    pathEl.setAttribute('stroke-width','2');pathEl.setAttribute('marker-end',`url(#mk-${k})`);
+    pathEl.setAttribute('opacity','.9');pathEl.style.pointerEvents='none';
+    hitPath.setAttribute('fill','none');hitPath.setAttribute('stroke','transparent');
+    hitPath.setAttribute('stroke-width','14');hitPath.style.pointerEvents='stroke';
+    [pathEl,hitPath,bc,bt].forEach(el=>g.appendChild(el));
+    svg.appendChild(g); update();
+  }
+
+  // Ly tâm
+  const dirAng={up:-Math.PI/2,down:Math.PI/2,left:Math.PI,right:0};
+  const lyByC={};lyTamList.forEach(item=>{if(!lyByC[item.cungIdx])lyByC[item.cungIdx]=[];lyByC[item.cungIdx].push(item);});
+  Object.entries(lyByC).forEach(([ci,items])=>{
+    const el=document.getElementById(`cung-${ci}`);if(!el)return;
+    const r=localRect(el);
+    const chucEl=el.querySelector('.cung-chuc');
+    let chucCX=r.cx,chucCY=r.t+10;
+    if(chucEl){let lx2=0,ly2=0,cur=chucEl;while(cur&&cur!==outer){lx2+=cur.offsetLeft;ly2+=cur.offsetTop;cur=cur.offsetParent;}chucCX=lx2+chucEl.offsetWidth/2;chucCY=ly2+chucEl.offsetHeight/2;}
+    const byDir={};items.forEach(item=>{if(!byDir[item.dir])byDir[item.dir]=[];byDir[item.dir].push(item);});
+    Object.entries(byDir).forEach(([dir,dirItems])=>{
+      const ang=dirAng[dir],perp=[-Math.sin(ang),Math.cos(ang)],multi=dirItems.length>1;
+      dirItems.forEach((item,i)=>{const off=(i-(dirItems.length-1)/2)*14;let sx,sy;if(dir==='up'){sx=chucCX+perp[0]*off;sy=r.t;}else if(dir==='down'){sx=chucCX+perp[0]*off;sy=r.b;}else if(dir==='left'){sx=r.l;sy=r.cy+off;}else{sx=r.r;sy=r.cy+off;}addLyTamArrow(sx,sy,sx+Math.cos(ang)*34,sy+Math.sin(ang)*34,item.ky,!multi);});
+      if(!multi)return;
+      const AT=47;let lax,lay;if(dir==='up'){lax=chucCX+22;lay=r.t-AT+6;}else if(dir==='down'){lax=chucCX+23;lay=r.b+AT;}else if(dir==='left'){lax=r.l-AT+4;lay=r.cy+25;}else{lax=r.r+AT-4;lay=r.cy+25;}
+      const N=dirItems.length,STEP=13;
+      dirItems.forEach((item,i)=>{const lbl=document.createElementNS(ns,'text');lbl.setAttribute('x',String(lax+(i-(N-1)/2)*STEP));lbl.setAttribute('y',String(lay+6));lbl.setAttribute('text-anchor','middle');lbl.setAttribute('font-size','19');lbl.setAttribute('fill',KY_COLOR[item.ky]);lbl.setAttribute('font-weight','300');lbl.style.filter='drop-shadow(0 0 3px '+KY_COLOR[item.ky]+')';lbl.style.pointerEvents='none';lbl.textContent=item.ky;lbl.className='arrow-lytam';svg.appendChild(lbl);});
+    });
+  });
+
+  // Hướng tâm
+  const pairMap={};
+  huongTamList.forEach(item=>{
+    const key=[Math.min(item.srcIdx,item.dstIdx),Math.max(item.srcIdx,item.dstIdx)].join('-');
+    if(!pairMap[key])pairMap[key]=[];pairMap[key].push(item);
+  });
+  // Nhóm theo dstIdx: các mũi tên cùng điểm đến badge phải cách nhau
+  const dstGroups={};
+  huongTamList.forEach(item=>{
+    const dk=item.dstIdx;
+    if(!dstGroups[dk])dstGroups[dk]=[];
+    if(!dstGroups[dk].find(x=>x.srcIdx===item.srcIdx&&x.ky===item.ky))
+      dstGroups[dk].push(item);
+  });
+  Object.values(pairMap).forEach(items=>{
+    const n=items.length;
+    items.forEach((item,i)=>{
+      const sEl=document.getElementById(`cung-${item.srcIdx}`),dEl=document.getElementById(`cung-${item.dstIdx}`);
+      if(!sEl||!dEl)return;
+      const sR=localRect(sEl),dR=localRect(dEl),ang=Math.atan2(dR.cy-sR.cy,dR.cx-sR.cx),
+        off=(i-(n-1)/2)*14,px=-Math.sin(ang)*off,py=Math.cos(ang)*off;
+      const sFrom=[sR.cx+px,sR.cy+py],sTo=[dR.cx+px,dR.cy+py];
+      const ptS=intersect(sFrom,sTo,sR)||sFrom,ptD=intersect(sTo,sFrom,dR)||sTo;
+      // Tìm vị trí trong nhóm cùng điểm đến để tính khoảng cách badge
+      addHuongTamArrow(ptS[0],ptS[1],ptD[0],ptD[1],item.ky,`${item.srcIdx}-${item.dstIdx}-${item.ky}-${i}`,48);
+    });
+  });
+}
+
+// ── API ──
+async function saveLaSo(){
+  const outer=document.querySelector('.ban-outer');
+  if(!outer){alert('Chưa có lá số!');return;}
+  const btn=document.getElementById('btnSave');
+  if(btn){btn.disabled=true;btn.textContent='⏳...';}
+
+  // Vẽ lại mũi tên trước
+  equalizeCungHeights();
+  Object.keys(arrowCPs).forEach(k=>delete arrowCPs[k]);
+  if(_cachedArrowData) drawAllArrows(_cachedArrowData.lyTamList,_cachedArrowData.huongTamList);
+  await new Promise(r=>setTimeout(r,300));
+
+  const SCALE=2;
+  const bg='#fdf6e3';
+
+  // Ẩn SVG, chụp ban-outer (bao gồm bàn + padding xung quanh)
+  const liveSVG=document.getElementById('banSVG');
+  if(liveSVG) liveSVG.style.display='none';
+
+  let boardCanvas;
+  try{
+    boardCanvas=await html2canvas(outer,{
+      backgroundColor:bg,scale:SCALE,useCORS:true,logging:false,allowTaint:true,
+      scrollX:0,scrollY:0,
+    });
+  }catch(e){
+    if(liveSVG)liveSVG.style.display='';
+    alert('Lỗi: '+e.message);
+    if(btn){btn.disabled=false;btn.textContent='💾 Lưu ảnh lá số';}
+    return;
+  }
+  if(liveSVG) liveSVG.style.display='';
+
+  // Vẽ SVG đè lên canvas
+  const out=document.createElement('canvas');
+  out.width=boardCanvas.width; out.height=boardCanvas.height;
+  const ctx=out.getContext('2d');
+  ctx.drawImage(boardCanvas,0,0);
+
+  const liveSVG2=document.getElementById('banSVG');
+  if(!liveSVG2){finish(out);return;}
+
+  const ser=new XMLSerializer();
+  const svgStr=ser.serializeToString(liveSVG2);
+  const OW=outer.offsetWidth, OH=outer.offsetHeight;
+  const blob2=new Blob([svgStr],{type:'image/svg+xml;charset=utf-8'});
+  const url=URL.createObjectURL(blob2);
+  const img=new Image();
+  img.onload=()=>{
+    ctx.drawImage(img,0,0,OW*SCALE,OH*SCALE);
+    URL.revokeObjectURL(url);
+    finish(out);
+  };
+  img.onerror=()=>{URL.revokeObjectURL(url);finish(out);};
+  img.src=url;
+
+  function finish(canvas){
+    const hoTen=(document.getElementById('hoTen').value||'laso').replace(/\s+/g,'_');
+    const dd=document.getElementById('ngayDD').value||'';
+    const mm=document.getElementById('ngayMM').value||'';
+    const yy=document.getElementById('ngayYYYY').value||'';
+    const fileName=`TuVi_${hoTen}_${dd}-${mm}-${yy}.png`;
+    if(window.showSaveFilePicker){
+      canvas.toBlob(async b=>{
+        try{const fh=await window.showSaveFilePicker({suggestedName:fileName,types:[{description:'PNG',accept:{'image/png':['.png']}}]});const ws=await fh.createWritable();await ws.write(b);await ws.close();}
+        catch(e){if(e.name!=='AbortError'){const lnk=document.createElement('a');lnk.download=fileName;lnk.href=URL.createObjectURL(b);lnk.click();}}
+        if(btn){btn.disabled=false;btn.textContent='💾 Lưu ảnh lá số';}
+      },'image/png');
+    }else{
+      const lnk=document.createElement('a');lnk.download=fileName;
+      lnk.href=canvas.toDataURL('image/png');lnk.click();
+      if(btn){btn.disabled=false;btn.textContent='💾 Lưu ảnh lá số';}
+    }
+  }
+}
+
+function _printLaSo(){}
+
+async function lapLaSo(){
+  const btn=document.getElementById('btnTao'),err=document.getElementById('errBox');
+  err.className='err-box';btn.disabled=true;btn.innerHTML='<span class="spin"></span> Đang lập lá số...';
+  const dd=parseInt(document.getElementById('ngayDD').value);
+  const mm=parseInt(document.getElementById('ngayMM').value);
+  const yyyy=parseInt(document.getElementById('ngayYYYY').value);
+  if(!dd||!mm||!yyyy||dd<1||dd>31||mm<1||mm>12||yyyy<1900){
+    document.getElementById('errBox').textContent='⚠️ Nhập đúng Ngày / Tháng / Năm sinh!';
+    document.getElementById('errBox').className='err-box show';
+    btn.disabled=false;btn.innerHTML='<span>🔮 Lập lá số</span>';return;
+  }
+  const ngaySinh=`${yyyy}-${String(mm).padStart(2,'0')}-${String(dd).padStart(2,'0')}`;
+  const gioH=parseInt(document.getElementById('gioH').value)||0;
+  const gioMin=parseInt(document.getElementById('gioM').value)||0;
+  const gioSinhStr=`${String(gioH).padStart(2,'0')}:${String(gioMin).padStart(2,'0')}`;
+  try{
+    const d = TuViEngine.lapLaSo({
+      hoTen: document.getElementById('hoTen').value||'Khách',
+      gioiTinh: document.getElementById('gioiTinh').value,
+      lichLoai: document.getElementById('lichLoai').value,
+      ngaySinh,
+      gioSinh: gioSinhStr,
+      muiGio: parseFloat(document.getElementById('muiGio').value),
+      thanhPho: document.getElementById('thanhPhoInput').value.trim()||document.getElementById('quocGiaInput').value.replace(/^.{2}\s/,'').trim(),
+      thangNhuan: document.getElementById('lichLoai').value==='am'&&document.getElementById('thangNhuan').value==='1'
+    });
+    if(d.status!=='success'){err.textContent='⚠️ '+d.message;err.className='err-box show';return;}
+    render(d);
+  }catch(e){err.textContent='❌ Lỗi tính toán: '+e.message;err.className='err-box show';}
+  finally{btn.disabled=false;btn.innerHTML='<span>🔮 Lập lá số</span>';}
+}
+
+function render(d){
+  const ti=d.thongTin,vM=d.cung.menh.viTri,vT=d.cung.than.viTri,nh=d.nguHanhCuc;
+  const thMap=buildTHMap(ti.canChiNam);
+  const namXemInput=parseInt(document.getElementById('namXem').value);
+  const namXem=(!namXemInput||isNaN(namXemInput))?new Date().getFullYear():namXemInput;
+  const namAmSinh=parseInt(ti.ngayAm.split('/')[2])||2000;
+  const tuoiAm=namXem-namAmSinh+1;
+  const namXemCC=canChiNam(namXem);
+
+  // chucMap, dvMap
+  _chucMapGlobal={};for(let i=0;i<12;i++)_chucMapGlobal[(vM-i+12)%12]=i;
+  const dvMap={};(d.daiHan||[]).forEach(dh=>dvMap[dh.cung]=dh.tuoiBatDau);
+
+  // Chi năm sinh âm (cho lưu niên dãy số tuổi)
+  const chiNamSinhStr=ti.canChiNam?.trim().split(' ')[1]||'';
+  const chiNamSinh=DC.indexOf(chiNamSinhStr);
+
+  // Chi thái tuế năm xem — đúng: Giáp Tý=1984, Tý=0; mỗi năm +1
+  // Công thức: (namXem - 1984 + 400*12) % 12
+  const chiThaituee=(namXem-1984+4800)%12;
+
+  // Tháng lưu niên
+  const thangSinhAm=parseInt(ti.ngayAm.split('/')[1])||1;
+  const gioStr=ti.gioSinh||'';
+  const chiGioMatch=gioStr.match(/^([^\s]+)\s*thời/);
+  const chiGioTen=chiGioMatch?chiGioMatch[1]:'Tý';
+  const chiGioSinh=DC.indexOf(chiGioTen);
+  const thangMap=tinhThangLuuNien(chiThaituee,thangSinhAm,chiGioSinh<0?0:chiGioSinh);
+
+  // Đại vận hiện tại
+  let dvCungHienTai=-1;
+  (d.daiHan||[]).forEach(dh=>{if(tuoiAm>=dh.tuoiBatDau&&tuoiAm<=dh.tuoiKetThuc)dvCungHienTai=dh.cung;});
+  const dvCucMap={};
+  if(dvCungHienTai>=0){for(let i=0;i<12;i++)dvCucMap[(dvCungHienTai-i+12)%12]=TEN_CHUC[i];}
+
+  // saoCungMap cho ly tâm / hướng tâm
+  const saoCungMap={};for(let i=0;i<12;i++)(d.saoCung[String(i)]||[]).forEach(s=>saoCungMap[s.ten]=i);
+  const lyTamList=[],huongTamList=[];
+  for(let i=0;i<12;i++){
+    const can=(d.tenCung[String(i)]||'').trim().split(' ')[0];
+    const th=TU_HOA[can];if(!th)continue;
+    const doi=(i+6)%12;
+    ['loc','quyen','khoa','ki'].forEach((loai,ki)=>{
+      const k=['A','B','C','D'][ki],st=th[loai];if(!st)return;
+      const dst=saoCungMap[st];if(dst===undefined)return;
+      if(dst===i)lyTamList.push({cungIdx:i,ky:k,saoTen:st,dir:lyTamDir(i)});
+      else if(dst===doi)huongTamList.push({srcIdx:i,dstIdx:dst,ky:k,saoTen:st});
+    });
+  }
+  _cachedArrowData={lyTamList,huongTamList};
+
+  // Info bars
+  document.getElementById('ib1').innerHTML=`
+    <div class="info-item"><div class="lbl">HỌ TÊN</div><div class="val">${ti.hoTen||'—'}</div></div>
+    <div class="info-item"><div class="lbl">GIỚI TÍNH</div><div class="val">${ti.gioiTinh==='nam'?'Nam':'Nữ'}</div></div>
+    <div class="info-item"><div class="lbl">NGÀY ÂM</div><div class="val">${ti.ngayAm}${ti.thangNhuan?' <span style="background:#a05000;color:#fff;font-size:.7rem;padding:1px 6px;border-radius:10px">NHUẬN</span>':''}</div></div>
+    <div class="info-item"><div class="lbl">NGÀY DƯƠNG</div><div class="val">${ti.ngayDuong}</div></div>`;
+  document.getElementById('ib2').innerHTML=`
+    <div class="info-item"><div class="lbl">GIỜ SINH</div><div class="val">${ti.gioSinh||''}</div></div>
+    <div class="info-item"><div class="lbl">CAN CHI NĂM</div><div class="val">${ti.canChiNam}</div></div>
+    <div class="info-item"><div class="lbl">NƠI SINH</div><div class="val">${ti.thanhPho||'—'}</div></div>
+    <div class="info-item"><div class="lbl">NĂM XEM / TUỔI ÂM</div><div class="val">${namXem} · ${tuoiAm} tuổi</div></div>`;
+  document.getElementById('badges').innerHTML=`
+    <span class="badge" style="background:#fff0f0;color:#c0392b;border-color:#c0392b88">Mệnh: ${DC[vM]}</span>
+    <span class="badge" style="background:#f0f0ff;color:#1a3a9b;border-color:#1a3a9b88">Thân: ${DC[vT]}</span>
+    <span class="badge" style="background:#fff8e0;color:#8B4513;border-color:#c9a06066">🗓 ${namXem} · ${namXemCC}</span>
+    <span class="badge" style="background:#f0fff4;color:#1a6b3a;border-color:#1a6b3a88">${nh.tenCuc}</span>
+    ${dvCungHienTai>=0?`<span class="badge" style="background:#fff8e0;color:#8b5a00;border-color:#c9a06088">📅 Đại vận: ${dvMap[dvCungHienTai]}–${dvMap[dvCungHienTai]+9} tuổi</span>`:''}`;
+
+  // Center
+  const centerInfo=`
+    <div class="ci-name">${ti.hoTen||'Tử Vi Mộc Lang'}</div>
+    <span class="ci-zalo">☯ ZALO LUẬN GIẢI: 0909794441</span>
+    <span class="ci-row">📅 ${ti.ngayDuong}</span>
+    <span class="ci-row">🌙 ${ti.ngayAm}</span>
+    <span class="ci-row">⏰ ${ti.gioSinh||''}</span>
+    <span class="ci-row">${ti.gioiTinh==='nam'?'♂ Nam':'♀ Nữ'}</span>
+    <span class="ci-row">🎂 ${tuoiAm} tuổi âm</span>
+    <span class="ci-row" style="font-weight:700;color:#8B4513">${ti.canChiNam}</span>
+    <span class="ci-cuc">${nh.tenCuc}</span>`;
+
+  // Build bàn
+  let banHtml='';
+  for(let r=0;r<4;r++){
+    for(let c=0;c<4;c++){
+      const idx=LAYOUT[r][c];
+      if(idx===-1){if(r===1&&c===1)banHtml+=`<div class="cung center">${centerInfo}</div>`;continue;}
+      const stars=d.saoCung[String(idx)]||[];
+      const canChiCung=d.tenCung[String(idx)]||DC[idx];
+      const chucIdx=_chucMapGlobal[idx]||0;
+      const iM=idx===vM,iT=idx===vT;
+      const dvTuoi=dvMap[idx]!==undefined?dvMap[idx]:'';
+      const dhCung=(d.daiHan||[]).find(dh=>dh.cung===idx);
+      const dvNamStr=dhCung?`${dhCung.namBatDau}–${dhCung.namKetThuc}`:'';
+      const dvCucTen=dvCucMap[idx]||''; // tên cung đại vận
+
+      // Lưu niên: dãy số tuổi + tên cung LN + tháng LN
+      const lnTuoi=chiNamSinh>=0?luuNien(idx,chiNamSinh):'';
+      const lnCungTen=luuNienCungTen(idx,chiThaituee);
+      const lnThang=thangMap[idx]||'';
+
+      const chinhs=stars.filter(s=>s.loai==='chinh');
+      const phus=stars.filter(s=>s.loai==='phu');
+      function mkSao(s,cls){const ky=thMap[s.ten];const kyH=ky?`<span class="th th-${ky}">${ky}</span>`:'';return`<span class="sao ${cls}">${s.ten}${kyH}</span>`;}
+      const chinhHtml=chinhs.map(s=>`<div style="display:flex;justify-content:center;width:100%">${mkSao(s,'chinh')}</div>`).join('');
+      const phuHtml=phus.map(s=>mkSao(s,'phu')).join('');
+      const borderStyle=iM?'border:2px solid #c0392b !important;':iT?'border:2px solid #1a3a9b !important;':'';
+
+      banHtml+=`<div class="cung" id="cung-${idx}" style="${borderStyle}">
+        ${dvTuoi!==''?`<div class="cung-dv">${dvTuoi}</div>`:''}
+        <div class="cung-cc">${abbCC(canChiCung)}</div>
+        <div class="cung-chuc">${TEN_CHUC[chucIdx]}</div>
+        <div class="sao-chinh-wrap">${chinhHtml}</div>
+        ${phuHtml?`<div class="sao-phu-wrap">${phuHtml}</div>`:''}
+        <div class="ln-chuc" style="display:none">${lnThang?`<span style="color:#ff8c00;font-weight:900">${lnThang}</span> · `:''}<span>${lnCungTen}</span></div>
+        <div class="cung-bottom">
+          ${dvCucTen?`<span class="dv-chuc">${dvCucTen} ĐV</span>`:''}
+          ${lnTuoi?`<span class="ln-label">${lnTuoi}</span>`:''}
+        </div>
+      </div>`;
+    }
+  }
+  document.getElementById('banTuvi').innerHTML=banHtml;
+  // Áp lại trạng thái lưu niên sau khi render mới
+  document.querySelectorAll('.ln-chuc').forEach(el=>{
+    el.style.display=luuNienMode?'block':'none';
+  });
+
+  // Đại hạn table
+  const now=new Date().getFullYear();
+  let dhHtml=`<thead><tr><th>#</th><th>Tuổi</th><th>Năm dương</th><th>Địa chi</th><th>Chiều</th></tr></thead><tbody>`;
+  (d.daiHan||[]).forEach(dh=>{
+    const cur=namXem>=dh.namBatDau&&namXem<=dh.namKetThuc;
+    dhHtml+=`<tr class="${cur?'cur':''}"><td>${dh.thu}</td><td>${dh.tuoiBatDau}–${dh.tuoiKetThuc}</td><td>${dh.namBatDau}–${dh.namKetThuc}</td><td>${DC[dh.cung]}</td><td>${d.chieuDaiHan==='thuận'?'▶ Thuận':'◀ Nghịch'}</td></tr>`;
+  });
+  document.getElementById('dhTable').innerHTML=dhHtml+'</tbody>';
+
+  document.getElementById('result').className='show';
+  document.getElementById('result').scrollIntoView({behavior:'smooth'});
+
+  setTimeout(()=>{
+    equalizeCungHeights();
+    Object.keys(arrowCPs).forEach(k=>delete arrowCPs[k]);
+    drawAllArrows(lyTamList,huongTamList);
+  },250);
+
+  // Vẽ lại mũi tên khi resize (cả banWrap lẫn window)
+  if(window._arrowRO)window._arrowRO.disconnect();
+  if(window._arrowWinResize)window.removeEventListener('resize',window._arrowWinResize);
+
+  function _redrawArrows(){
+    equalizeCungHeights();
+    Object.keys(arrowCPs).forEach(k=>delete arrowCPs[k]);
+    drawAllArrows(_cachedArrowData.lyTamList,_cachedArrowData.huongTamList);
+  }
+
+  // ResizeObserver cho banWrap
+  const wrap=document.getElementById('banWrap');
+  if(wrap&&window.ResizeObserver){
+    let raf=null;
+    window._arrowRO=new ResizeObserver(()=>{
+      if(raf)cancelAnimationFrame(raf);
+      raf=requestAnimationFrame(_redrawArrows);
+    });
+    window._arrowRO.observe(wrap);
+    // Observe thêm ban-outer để bắt thay đổi padding/layout
+    const outer=document.querySelector('.ban-outer');
+    if(outer)window._arrowRO.observe(outer);
+  }
+
+  // Window resize fallback
+  let _winRaf=null;
+  window._arrowWinResize=()=>{
+    if(_winRaf)cancelAnimationFrame(_winRaf);
+    _winRaf=requestAnimationFrame(()=>{setTimeout(_redrawArrows,50);});
+  };
+  window.addEventListener('resize',window._arrowWinResize);
+}
+</script>
+</body>
+</html>
