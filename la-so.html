@@ -1027,18 +1027,20 @@ function drawAllArrows(lyTamList,huongTamList){
   });
 }
 
-// ── SAVE LÁ SỐ ──
-async function saveLaSo(){
+// ══════════════════════════════════════════
+// EXPORT LÁ SỐ — tách 3 hàm rõ ràng
+// ══════════════════════════════════════════
+
+// Hàm 1: Render lá số ra Blob PNG (dùng chung mobile + desktop)
+async function exportChartToBlob(){
   const wrap=document.getElementById('banWrap');
   const scaler=document.getElementById('banScaler');
   const outer=document.getElementById('banOuter');
-  if(!wrap||!outer){alert('Chưa có lá số!');return;}
-  const btn=document.getElementById('btnSave');
-  if(btn){btn.disabled=true;btn.textContent='⏳...';}
+  if(!wrap||!outer)return null;
 
-  const BG='#fdf6e3'; // vàng kem sáng — nhất quán hiển thị và save
+  const BG='#fdf6e3';
 
-  // 1. Reset mobile
+  // Reset mobile scale để render đủ nét
   const savedTransform=wrap.style.transform,savedWidth=wrap.style.width,savedMobileScale=wrap._mobileScale;
   const savedScalerW=scaler?scaler.style.width:'',savedScalerH=scaler?scaler.style.height:'',savedOuterH=outer.style.height;
   wrap.style.transform='none';wrap.style.width='';wrap._mobileScale=null;
@@ -1050,12 +1052,11 @@ async function saveLaSo(){
   if(_cachedArrowData) drawAllArrows(_cachedArrowData.lyTamList,_cachedArrowData.huongTamList);
   await new Promise(r=>setTimeout(r,350));
 
-  // 2. Kích thước + DPR
   const banW=wrap.offsetWidth, banH=wrap.offsetHeight;
-  const PAD_H=80, PAD_V=70; // đủ rộng cho mũi tên ly tâm dài nhất
+  const PAD_H=80, PAD_V=70;
   const DPR=Math.min(window.devicePixelRatio||1,2);
 
-  // 3. Chụp HTML (ẩn SVG)
+  // Ẩn SVG, chụp HTML
   const liveSVG=document.getElementById('banSVG');
   if(liveSVG)liveSVG.style.display='none';
   let boardCanvas;
@@ -1064,19 +1065,19 @@ async function saveLaSo(){
   }catch(e){
     if(liveSVG)liveSVG.style.display='';
     _restoreMobile(wrap,scaler,outer,savedTransform,savedWidth,savedMobileScale,savedScalerW,savedScalerH,savedOuterH);
-    alert('Lỗi: '+e.message);if(btn){btn.disabled=false;btn.textContent='💾 Lưu ảnh lá số';}return;
+    throw e;
   }
   if(liveSVG)liveSVG.style.display='';
 
-  // 4. Canvas export — nền vàng kem + padding
+  // Canvas export nền vàng kem + padding
   const expW=(banW+PAD_H*2)*DPR, expH=(banH+PAD_V*2)*DPR;
   const exportCanvas=document.createElement('canvas');
   exportCanvas.width=expW;exportCanvas.height=expH;
   const ctx=exportCanvas.getContext('2d');
-  ctx.fillStyle=BG; ctx.fillRect(0,0,expW,expH);
+  ctx.fillStyle=BG;ctx.fillRect(0,0,expW,expH);
   ctx.drawImage(boardCanvas,PAD_H*DPR,PAD_V*DPR,banW*DPR,banH*DPR);
 
-  // 5. SVG mũi tên — mở rộng viewBox bao trọn mũi tên rìa
+  // Vẽ SVG mũi tên đè lên
   const liveSVG2=document.getElementById('banSVG');
   if(liveSVG2){
     await new Promise(resolve=>{
@@ -1090,42 +1091,124 @@ async function saveLaSo(){
     });
   }
 
-  // 6. Restore mobile
+  // Restore mobile
   _restoreMobile(wrap,scaler,outer,savedTransform,savedWidth,savedMobileScale,savedScalerW,savedScalerH,savedOuterH);
   setTimeout(()=>{Object.keys(arrowCPs).forEach(k=>delete arrowCPs[k]);if(_cachedArrowData)drawAllArrows(_cachedArrowData.lyTamList,_cachedArrowData.huongTamList);},150);
 
-  // 7. Tên file + xuất
+  // Trả về blob
+  return new Promise(resolve=>{
+    exportCanvas.toBlob(blob=>resolve(blob),'image/png');
+  });
+}
+
+// Hàm 2: Lưu trên MOBILE — ưu tiên native share sheet với file PNG
+async function saveChartMobile(blob, fileName){
+  const file=new File([blob], fileName, {type:'image/png'});
+
+  // 1. Ưu tiên Web Share API với file PNG (iOS 15+, Android Chrome 89+)
+  if(navigator.canShare && navigator.canShare({files:[file]})){
+    try{
+      await navigator.share({
+        files:[file],
+        title:'Lá số tử vi',
+        text:'Lưu lá số tử vi – Tử Vi Mộc Lang'
+      });
+      return; // share thành công
+    }catch(e){
+      if(e.name==='AbortError')return; // user tự cancel, không làm gì thêm
+      // share lỗi → fallthrough xuống fallback
+    }
+  }
+
+  // 2. Fallback: blob URL + <a download>
+  const objectUrl=URL.createObjectURL(blob);
+  const lnk=document.createElement('a');
+  lnk.href=objectUrl;lnk.download=fileName;lnk.style.display='none';
+  document.body.appendChild(lnk);
+  lnk.click();
+  document.body.removeChild(lnk);
+
+  // 3. iOS Safari: download thường không hoạt động tốt
+  //    → hiện modal preview để người dùng nhấn giữ lưu ảnh
+  const isIOS=/iPhone|iPad|iPod/i.test(navigator.userAgent);
+  const isFB=/FBAN|FBAV|FB_IAB|Instagram/i.test(navigator.userAgent);
+  if(isIOS||isFB){
+    const mi=document.getElementById('saveModalImg');
+    if(mi) mi.src=objectUrl; // giữ URL sống cho modal
+    const ob=document.querySelector('#saveModal .sm-btn');
+    if(ob) ob.onclick=()=>window.open(objectUrl,'_blank');
+    document.getElementById('saveModal')?.classList.add('show');
+    // Không revoke URL — để người dùng còn dùng trong modal
+  }else{
+    // Android Chrome / các browser khác: revoke sau 3 giây
+    setTimeout(()=>URL.revokeObjectURL(objectUrl), 3000);
+  }
+}
+
+// Hàm 3: Lưu trên DESKTOP
+async function saveChartDesktop(blob, fileName){
+  // Ưu tiên showSaveFilePicker (Chrome/Edge desktop)
+  if(window.showSaveFilePicker){
+    try{
+      const fh=await window.showSaveFilePicker({suggestedName:fileName,types:[{description:'PNG Image',accept:{'image/png':['.png']}}]});
+      const ws=await fh.createWritable();await ws.write(blob);await ws.close();
+      return;
+    }catch(e){
+      if(e.name==='AbortError')return;
+      // fallthrough
+    }
+  }
+  // Fallback download thông thường
+  const u=URL.createObjectURL(blob);
+  const lnk=document.createElement('a');
+  lnk.href=u;lnk.download=fileName;lnk.style.display='none';
+  document.body.appendChild(lnk);lnk.click();document.body.removeChild(lnk);
+  setTimeout(()=>URL.revokeObjectURL(u),2000);
+}
+
+// Hàm chính: tự chọn flow mobile hay desktop
+async function saveLaSo(){
+  const wrap=document.getElementById('banWrap');
+  if(!wrap){alert('Chưa có lá số!');return;}
+  const btn=document.getElementById('btnSave');
+  if(btn){btn.disabled=true;btn.textContent='⏳...';}
+
   const hoTen=(document.getElementById('hoTen').value||'laso').replace(/\s+/g,'_');
-  const dd=document.getElementById('ngayDD').value||'',mm2=document.getElementById('ngayMM').value||'',yy=document.getElementById('ngayYYYY').value||'';
+  const dd=document.getElementById('ngayDD').value||'';
+  const mm2=document.getElementById('ngayMM').value||'';
+  const yy=document.getElementById('ngayYYYY').value||'';
   const fileName=`TuVi_${hoTen}_${dd}-${mm2}-${yy}.png`;
 
-  exportCanvas.toBlob(async blob=>{
-    if(!blob){if(btn){btn.disabled=false;btn.textContent='💾 Lưu ảnh lá số';}alert('Không tạo được ảnh.');return;}
-    const ua=navigator.userAgent||'';
-    const isWebView=/FBAN|FBAV|FB_IAB|Instagram|Line\/|MicroMessenger/.test(ua)||/(iPhone|iPod|iPad).*AppleWebKit(?!.*Safari)/i.test(ua)||/Android.*wv\)/.test(ua);
+  let blob;
+  try{
+    blob=await exportChartToBlob();
+  }catch(e){
+    alert('Lỗi tạo ảnh: '+e.message);
+    if(btn){btn.disabled=false;btn.textContent='💾 Lưu ảnh lá số';}
+    return;
+  }
+  if(!blob){
+    alert('Không tạo được ảnh.');
+    if(btn){btn.disabled=false;btn.textContent='💾 Lưu ảnh lá số';}
+    return;
+  }
 
-    if(!isWebView && window.showSaveFilePicker){
-      try{
-        const fh=await window.showSaveFilePicker({suggestedName:fileName,types:[{description:'PNG',accept:{'image/png':['.png']}}]});
-        const ws=await fh.createWritable();await ws.write(blob);await ws.close();
-        if(btn){btn.disabled=false;btn.textContent='💾 Lưu ảnh lá số';}return;
-      }catch(e){if(e.name==='AbortError'){if(btn){btn.disabled=false;btn.textContent='💾 Lưu ảnh lá số';}return;}}
-    }
+  // Detect mobile/tablet (không phải desktop Mac với trackpad)
+  const ua=navigator.userAgent||'';
+  const isMobile=/Android|iPhone|iPad|iPod|Mobile/i.test(ua)||
+    (navigator.maxTouchPoints>1&&!/Macintosh/i.test(ua));
 
-    if(!isWebView){
-      const u=URL.createObjectURL(blob),lnk=document.createElement('a');
-      lnk.href=u;lnk.download=fileName;lnk.style.display='none';
-      document.body.appendChild(lnk);lnk.click();document.body.removeChild(lnk);
-      setTimeout(()=>URL.revokeObjectURL(u),2000);
-      if(btn){btn.disabled=false;btn.textContent='💾 Lưu ảnh lá số';}
-    } else {
-      const u=URL.createObjectURL(blob);
-      const mi=document.getElementById('saveModalImg');if(mi)mi.src=u;
-      const ob=document.querySelector('#saveModal .sm-btn');if(ob)ob.onclick=()=>window.open(u,'_blank');
-      document.getElementById('saveModal')?.classList.add('show');
-      if(btn){btn.disabled=false;btn.textContent='💾 Lưu ảnh lá số';}
+  try{
+    if(isMobile){
+      await saveChartMobile(blob,fileName);
+    }else{
+      await saveChartDesktop(blob,fileName);
     }
-  },'image/png');
+  }catch(e){
+    if(e.name!=='AbortError')alert('Lỗi lưu: '+e.message);
+  }
+
+  if(btn){btn.disabled=false;btn.textContent='💾 Lưu ảnh lá số';}
 }
 
 function _restoreMobile(wrap,scaler,outer,savedTransform,savedWidth,savedMobileScale,savedScalerW,savedScalerH,savedOuterH){
