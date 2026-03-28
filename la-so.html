@@ -314,6 +314,36 @@ body{background:var(--bg);color:var(--text);font-family:'Segoe UI',Arial,sans-se
 #saveModal img{max-width:92vw;max-height:60vh;border-radius:8px;box-shadow:0 4px 24px rgba(0,0,0,.6);}
 #saveModal .sm-hint{color:#fff;font-size:13px;text-align:center;opacity:.85;line-height:1.5;}
 #saveModal .sm-btns{display:flex;gap:10px;flex-wrap:wrap;justify-content:center;}
+
+/* Banner cảnh báo in-app browser */
+#inappBanner{
+  display:none;
+  position:fixed;bottom:0;left:0;right:0;z-index:8888;
+  background:#1a1a2e;
+  color:#fff;
+  padding:12px 16px 16px;
+  box-shadow:0 -4px 20px rgba(0,0,0,.35);
+  font-family:inherit;
+}
+#inappBanner.show{display:block;}
+#inappBanner .iab-title{font-size:13.5px;font-weight:700;margin-bottom:4px;display:flex;align-items:center;gap:7px;}
+#inappBanner .iab-desc{font-size:12.5px;color:rgba(255,255,255,.78);margin-bottom:11px;line-height:1.5;}
+#inappBanner .iab-btns{display:flex;gap:8px;flex-wrap:wrap;}
+#inappBanner .iab-btn{
+  flex:1 1 auto;min-width:0;
+  border:none;border-radius:8px;
+  font-size:13px;font-weight:700;font-family:inherit;
+  padding:9px 12px;cursor:pointer;
+  transition:opacity .15s;
+}
+#inappBanner .iab-btn:active{opacity:.8;}
+#inappBanner .iab-btn.primary{background:#B5651D;color:#fff;}
+#inappBanner .iab-btn.secondary{background:rgba(255,255,255,.15);color:#fff;}
+#inappBanner .iab-close{
+  position:absolute;top:10px;right:12px;
+  background:none;border:none;color:rgba(255,255,255,.55);
+  font-size:18px;cursor:pointer;line-height:1;padding:2px 6px;
+}
 #saveModal .sm-btn{background:var(--terra);color:#fff;border:none;border-radius:8px;padding:10px 20px;font-size:14px;font-weight:700;cursor:pointer;font-family:inherit;}
 #saveModal .sm-btn.sec{background:transparent;border:1px solid #ffffff66;color:#fff;}
 @media print{.header,.form-card,.action-row,.daihan-wrap{display:none !important;}#result.show{display:block !important;}.ban-outer{padding:40px;}}
@@ -1070,7 +1100,7 @@ async function exportChartToBlob(){
   const outer = document.getElementById('banOuter');
   if(!wrap||!outer) return null;
 
-  const BG = '#efe6c9'; // vàng kem sáng — nhất quán cả hiển thị lẫn ảnh xuất
+  const BG = '#fdf6e3';
 
   // 1. Reset mobile scale → render full-res
   const sv={
@@ -1089,39 +1119,37 @@ async function exportChartToBlob(){
   if(_cachedArrowData) drawAllArrows(_cachedArrowData.lyTamList,_cachedArrowData.huongTamList);
   await new Promise(r=>setTimeout(r,350));
 
+  // 2. Kích thước CSS thật của banWrap
   const banW=wrap.offsetWidth, banH=wrap.offsetHeight;
-  const DPR=Math.min(window.devicePixelRatio||1,2);
+  const DPR=window.devicePixelRatio||1;
 
-  // 2. Tính bounding box thật của SVG mũi tên (bao trọn mũi tên nhô ra rìa)
-  // Safe margin nhỏ thay vì padding cứng lớn
-  const MARGIN=16; // px — đủ không cắt mũi tên, không dư thừa
-  let svgMinX=0, svgMinY=0, svgMaxX=banW, svgMaxY=banH;
-  const liveSVGbb=document.getElementById('banSVG');
-  if(liveSVGbb){
-    try{
-      const bb=liveSVGbb.getBBox();
-      svgMinX=Math.min(0,bb.x);
-      svgMinY=Math.min(0,bb.y);
-      svgMaxX=Math.max(banW,bb.x+bb.width);
-      svgMaxY=Math.max(banH,bb.y+bb.height);
-    }catch(e){}
-  }
-  const offL=Math.max(0,-svgMinX)+MARGIN;  // padding trái
-  const offT=Math.max(0,-svgMinY)+MARGIN;  // padding trên
-  const offR=Math.max(0,svgMaxX-banW)+MARGIN; // padding phải
-  const offB=Math.max(0,svgMaxY-banH)+MARGIN; // padding dưới
+  // 3. Padding an toàn cho mũi tên nhô ra rìa (CSS px)
+  const PAD=56; // đủ cho mũi tên ly tâm dài nhất
+  const cssW=banW+PAD*2;
+  const cssH=banH+PAD*2;
 
-  const expW=(banW+offL+offR)*DPR;
-  const expH=(banH+offT+offB)*DPR;
+  // 4. Canvas export = CSS size × DPR — dùng ctx.scale(DPR) → làm việc hoàn toàn trong CSS space
+  const exportCanvas=document.createElement('canvas');
+  exportCanvas.width =Math.round(cssW*DPR);
+  exportCanvas.height=Math.round(cssH*DPR);
+  const ctx=exportCanvas.getContext('2d');
+  ctx.scale(DPR,DPR);              // từ đây MỌI tọa độ = CSS px
+  ctx.imageSmoothingEnabled=false; // tắt smoothing → sắc nét
 
-  // 3. html2canvas chụp banWrap (ẩn SVG trước)
+  // Fill nền kem sáng
+  ctx.fillStyle=BG;
+  ctx.fillRect(0,0,cssW,cssH);
+
+  // 5. Chụp HTML (ẩn SVG)
   const liveSVG=document.getElementById('banSVG');
   if(liveSVG) liveSVG.style.display='none';
   let boardCanvas;
   try{
     boardCanvas=await html2canvas(wrap,{
-      backgroundColor:BG, scale:DPR, useCORS:true,
-      logging:false, allowTaint:true, scrollX:0, scrollY:0,
+      backgroundColor:BG,
+      scale:DPR,
+      useCORS:true, logging:false, allowTaint:true,
+      scrollX:0, scrollY:0,
       width:banW, height:banH
     });
   }catch(e){
@@ -1131,29 +1159,31 @@ async function exportChartToBlob(){
   }
   if(liveSVG) liveSVG.style.display='';
 
-  // 4. Tạo export canvas: nền vàng kem + bàn + padding đúng
-  const exportCanvas=document.createElement('canvas');
-  exportCanvas.width=expW; exportCanvas.height=expH;
-  const ctx=exportCanvas.getContext('2d');
-  ctx.fillStyle=BG; ctx.fillRect(0,0,expW,expH);
-  ctx.drawImage(boardCanvas, offL*DPR, offT*DPR, banW*DPR, banH*DPR);
+  // Paste boardCanvas vào đúng offset PAD (CSS space)
+  // boardCanvas.width = banW*DPR → ta vẽ ở CSS size (banW × banH), ctx.scale đã nhân DPR
+  ctx.drawImage(boardCanvas, PAD, PAD, banW, banH);
 
-  // 5. Serialize SVG → mở rộng viewBox khớp bounding box đã tính
+  // 6. Serialize SVG mũi tên → vẽ đúng vị trí trong CSS space
   const liveSVG2=document.getElementById('banSVG');
   if(liveSVG2){
     await new Promise(resolve=>{
       const ser=new XMLSerializer();
       let s=ser.serializeToString(liveSVG2);
-      const vbX=svgMinX-MARGIN, vbY=svgMinY-MARGIN;
-      const vbW=(svgMaxX-svgMinX)+MARGIN*2, vbH=(svgMaxY-svgMinY)+MARGIN*2;
-      s=s.replace(/\swidth="[^"]*"/,` width="${vbW}"`).replace(/\sheight="[^"]*"/,` height="${vbH}"`)
+      // SVG gốc: width=banW, height=banH, tọa độ trong CSS space của banWrap
+      // viewBox mở rộng PAD về 4 phía để bao trọn mũi tên nhô ra ngoài
+      const vbX=-PAD, vbY=-PAD, vbW=banW+PAD*2, vbH=banH+PAD*2;
+      // SVG render ở DPR để đủ pixel
+      s=s.replace(/\swidth="[^"]*"/,` width="${Math.round(vbW*DPR)}"`)
+         .replace(/\sheight="[^"]*"/,` height="${Math.round(vbH*DPR)}"`)
          .replace(/<svg /,`<svg viewBox="${vbX} ${vbY} ${vbW} ${vbH}" `);
       const b=new Blob([s],{type:'image/svg+xml;charset=utf-8'});
       const url=URL.createObjectURL(b);
       const img=new Image();
       img.onload=()=>{
-        // Vẽ SVG tại offset (offL-(-svgMinX+MARGIN), offT-(-svgMinY+MARGIN)) = (0,0) của viewport
-        ctx.drawImage(img,0,0,vbW*DPR,vbH*DPR);
+        // SVG viewBox từ (-PAD,-PAD) → trong canvas, vẽ tại (PAD-PAD, PAD-PAD) = (0,0)
+        // Nhưng banWrap nằm tại PAD → vẽ SVG tại (0, 0) = đúng (vì viewBox bắt đầu -PAD)
+        // ctx đang trong CSS space → vẽ ở (0,0), size (vbW, vbH)
+        ctx.drawImage(img, 0, 0, vbW, vbH);
         URL.revokeObjectURL(url); resolve();
       };
       img.onerror=()=>{URL.revokeObjectURL(url);resolve();};
@@ -1161,7 +1191,7 @@ async function exportChartToBlob(){
     });
   }
 
-  // 6. Restore
+  // 7. Restore mobile
   _restoreMobile(wrap,scaler,outer,sv);
   setTimeout(()=>{
     Object.keys(arrowCPs).forEach(k=>delete arrowCPs[k]);
@@ -1537,6 +1567,93 @@ function render(d){
     <button class="sm-btn sec" onclick="document.getElementById('saveModal').classList.remove('show')">✕ Đóng</button>
   </div>
 </div>
+
+<!-- Banner cảnh báo in-app browser (Zalo/Facebook/Instagram/Telegram) -->
+<div id="inappBanner">
+  <button class="iab-close" onclick="document.getElementById('inappBanner').classList.remove('show')" aria-label="Đóng">×</button>
+  <div class="iab-title">⚠️ Đang dùng trình duyệt trong app</div>
+  <div class="iab-desc" id="iabDesc">Trình duyệt trong Zalo/Facebook hạn chế lưu ảnh. Hãy mở bằng Safari/Chrome để dùng đầy đủ.</div>
+  <div class="iab-btns">
+    <button class="iab-btn primary" id="iabShareBtn" style="display:none" onclick="iabShareChart()">📤 Chia sẻ ảnh</button>
+    <button class="iab-btn secondary" id="iabOpenImgBtn" style="display:none" onclick="iabOpenImg()">🖼 Mở ảnh riêng</button>
+    <button class="iab-btn secondary" onclick="iabCopyLink()">🔗 Copy link trang</button>
+  </div>
+</div>
+
+<script>
+// ── Detect và hiện banner in-app browser ──
+(function(){
+  const ua=navigator.userAgent||'';
+  const app=
+    /FBAN|FBAV|FB_IAB/.test(ua)?'Facebook':
+    /Instagram/.test(ua)?'Instagram':
+    /ZaloApp|zalo/i.test(ua)?'Zalo':
+    /TelegramBot|Telegram\//.test(ua)?'Telegram':
+    /Line\//.test(ua)?'Line':
+    /MicroMessenger/.test(ua)?'WeChat':null;
+  if(!app)return;
+
+  const banner=document.getElementById('inappBanner');
+  const desc=document.getElementById('iabDesc');
+  if(desc) desc.textContent=`Đang mở trong ${app}. Trình duyệt trong app có thể hạn chế lưu ảnh — hãy mở bằng Safari hoặc Chrome để dùng đầy đủ.`;
+  if(banner) banner.classList.add('show');
+
+  // Hiện nút Chia sẻ ảnh nếu Web Share API có sẵn
+  if(navigator.share){
+    const shareBtn=document.getElementById('iabShareBtn');
+    if(shareBtn) shareBtn.style.display='';
+  }
+  // Hiện nút Mở ảnh riêng luôn (blob URL)
+  const openBtn=document.getElementById('iabOpenImgBtn');
+  if(openBtn) openBtn.style.display='';
+})();
+
+// Chia sẻ ảnh từ banner (export nhanh rồi share)
+async function iabShareChart(){
+  const btn=document.getElementById('iabShareBtn');
+  if(btn){btn.disabled=true;btn.textContent='⏳ Đang xử lý...';}
+  try{
+    const blob=await exportChartToBlob();
+    if(!blob)throw new Error('Không tạo được ảnh');
+    const file=new File([blob],'la-so-tu-vi.png',{type:'image/png'});
+    if(navigator.canShare&&navigator.canShare({files:[file]})){
+      await navigator.share({files:[file],title:'Lá số tử vi',text:'Tử Vi Mộc Lang'});
+    }else if(navigator.share){
+      // Share link thay thế nếu không share file được
+      await navigator.share({title:'Lá số tử vi',url:location.href});
+    }
+  }catch(e){
+    if(e.name!=='AbortError') alert('Không share được: '+e.message);
+  }finally{
+    if(btn){btn.disabled=false;btn.textContent='📤 Chia sẻ ảnh';}
+  }
+}
+
+// Mở ảnh riêng ở tab mới
+async function iabOpenImg(){
+  const btn=document.getElementById('iabOpenImgBtn');
+  if(btn){btn.disabled=true;btn.textContent='⏳...';}
+  try{
+    const blob=await exportChartToBlob();
+    if(!blob)throw new Error('Không tạo được ảnh');
+    openImageBlobInNewTab(blob);
+  }catch(e){
+    alert('Lỗi: '+e.message);
+  }finally{
+    if(btn){btn.disabled=false;btn.textContent='🖼 Mở ảnh riêng';}
+  }
+}
+
+// Copy link trang
+function iabCopyLink(){
+  const url=location.href;
+  if(navigator.clipboard){
+    navigator.clipboard.writeText(url).then(()=>alert('Đã copy link!\nDán vào Safari/Chrome để mở.'));
+  }else{
+    prompt('Copy link này rồi mở bằng Safari/Chrome:',url);
+  }
+}
+</script>
 
 </body>
 </html>
