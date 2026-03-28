@@ -243,7 +243,7 @@ body{background:var(--bg);color:var(--text);font-family:'Segoe UI',Arial,sans-se
   .cung-bottom{bottom:1px !important;right:2px !important;line-height:1.1 !important;}
   .cung-bottom .dv-chuc{font-size:4.5px !important;letter-spacing:0 !important;margin-bottom:2px !important;}
   .cung-bottom .ln-label{font-size:4px !important;margin-top:2px !important;}
-  .ln-chuc{font-size:4px !important;bottom:1px !important;left:2px !important;line-height:1.1 !important;}
+  .ln-chuc{font-size:4px !important;bottom:1px !important;left:2px !important;line-height:1.1 !important;display:flex !important;flex-direction:column !important;align-items:flex-start !important;}
 }
 
 .cung{background:var(--bg);padding:5px 5px 38px 5px;min-height:145px;position:relative;border:1px solid #8B451366;display:flex;flex-direction:column;align-items:stretch;cursor:pointer;}
@@ -287,8 +287,10 @@ body{background:var(--bg);color:var(--text);font-family:'Segoe UI',Arial,sans-se
 .show-ln .ln-label{display:block !important;}
 
 /* Tên cung lưu niên — góc dưới trái — mặc định ẨN, bật bằng nút */
-.ln-chuc{display:none;position:absolute;bottom:3px;left:5px;font-size:.65rem;font-weight:700;color:var(--green);text-align:left;line-height:1.4;z-index:3;pointer-events:none;}
-.ln-chuc.show{display:block;}
+.ln-chuc{display:none;position:absolute;bottom:3px;left:5px;font-size:.65rem;font-weight:700;color:var(--green);text-align:left;line-height:1.4;z-index:3;pointer-events:none;display:flex;flex-direction:column;align-items:flex-start;}
+.ln-chuc.show{display:flex;}
+.ln-thang{color:#ff8c00;font-weight:900;display:block;}
+.ln-chuc span{display:block;}
 
 /* ĐẠI HẠN TABLE */
 .daihan-wrap{background:var(--surface);border:1px solid var(--border-lt);border-radius:12px;padding:18px;margin-top:0;box-shadow:0 2px 8px rgba(139,69,19,.05);}
@@ -764,7 +766,7 @@ function toggleLuuNien(){
   document.getElementById('btnLuuNien').textContent=luuNienMode?'📅 Ẩn lưu niên':'📅 Hiện lưu niên';
   document.getElementById('btnLuuNien').classList.toggle('active',luuNienMode);
   document.querySelectorAll('.ln-chuc').forEach(el=>{
-    el.style.display=luuNienMode?'block':'none';
+    el.style.display=luuNienMode?'flex':'none';
   });
 }
 
@@ -1487,7 +1489,7 @@ function render(d){
         </div>
         <div class="sao-chinh-wrap">${chinhHtml}</div>
         ${phuHtml?`<div class="sao-phu-wrap">${phuHtml}</div>`:''}
-        <div class="ln-chuc" style="display:none">${lnThang?`<span style="color:#ff8c00;font-weight:900">${lnThang}</span> · `:''}<span>${lnCungTen}</span></div>
+        <div class="ln-chuc" style="display:none">${lnThang?`<span class="ln-thang">${lnThang}</span>`:''}${lnCungTen?`<span>${lnCungTen}</span>`:''}</div>
         <div class="cung-bottom">
           ${dvCucTen?`<span class="dv-chuc">${dvCucTen} ĐV</span>`:''}
           ${lnTuoi?`<span class="ln-label">${lnTuoi}</span>`:''}
