@@ -2,7 +2,7 @@
 <html lang="vi">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
 <title>Tạo Lá Số Tử Vi – Mộc Lang</title>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
 <script>
@@ -66,7 +66,7 @@ const TuViEngine = (() => {
   --terra:#B5651D;
 }
 *{box-sizing:border-box;margin:0;padding:0;}
-body{background:var(--bg);color:var(--text);font-family:'Segoe UI',Arial,sans-serif;min-height:100vh;}
+body{background:var(--bg);color:var(--text);font-family:'Segoe UI',Arial,sans-serif;min-height:100vh;overflow-x:hidden;-webkit-text-size-adjust:100%;text-size-adjust:100%;}
 .header{background:var(--bg2);border-bottom:2px solid var(--border);padding:14px 20px;display:flex;align-items:center;gap:14px;}
 .btn-back{display:inline-flex;align-items:center;gap:6px;color:var(--terra);font-size:13px;font-weight:700;text-decoration:none;padding:7px 16px;background:var(--bg);border:1px solid var(--terra);border-radius:50px;transition:background .2s;}
 .btn-back:hover{background:var(--bg3);}
@@ -117,30 +117,148 @@ body{background:var(--bg);color:var(--text);font-family:'Segoe UI',Arial,sans-se
 .btn-act.primary:hover{background:#8B4513;}
 
 /* BÀN TỬ VI */
-.ban-outer{width:100%;overflow:visible;padding:62px 72px;}
+.ban-outer{width:100%;overflow:visible;padding:62px 72px;background:#fdf6e3;position:relative;}
 .ban-wrap{position:relative;overflow:visible;}
 .ban-tuvi{display:grid;grid-template-columns:repeat(4,1fr);gap:0;border:3px solid var(--border);background:var(--border);border-radius:3px;}
 #banSVG{position:absolute;overflow:visible;pointer-events:none;z-index:40;}
 
-/* Mobile: scale bàn tử vi vừa màn hình */
-@media(max-width:700px){
-  .ban-outer{padding:50px 10px;overflow-x:auto;}
-  .ban-tuvi-scaler{
-    transform-origin:top left;
-    /* JS sẽ tự set transform:scale() */
+/* ── MOBILE — render native size, không transform:scale ── */
+@media(max-width:480px){
+  html,body{overflow-x:hidden !important;max-width:100% !important;}
+  html{-webkit-text-size-adjust:100%;text-size-adjust:100%;}
+  .page{padding-left:10px;padding-right:10px;overflow-x:hidden;box-sizing:border-box;width:100%;}
+  .daihan-wrap{display:none !important;}
+
+  /* Layout tổng thể */
+  .ban-outer{margin-top:18px;padding:28px 12px;overflow:visible;box-sizing:border-box;width:100%;}
+  .ban-tuvi-scaler{position:relative;overflow:visible;width:100%;}
+  #banWrap{overflow:visible;width:100%;max-width:100%;}
+  .ban-tuvi{width:100%;max-width:100%;table-layout:fixed;}
+
+  /* ── Ô cung ── */
+  .cung{
+    overflow:hidden !important;
+    padding:2px 2px 20px 2px !important;
+    min-height:56px !important;
+    max-width:100% !important;
+    box-sizing:border-box !important;
   }
+
+  /* ── Header: flex row ── */
+  .cung-header{
+    display:flex !important;
+    flex-direction:row !important;
+    align-items:center !important;
+    justify-content:space-between !important;
+    width:100% !important;
+    min-height:10px !important;
+    height:auto !important;
+    overflow:hidden !important;
+    gap:1px !important;
+    position:static !important;
+    border-bottom:1px solid #8B451333 !important;
+    margin-bottom:2px !important;
+    padding:0 1px !important;
+    box-sizing:border-box !important;
+  }
+
+  /* Số tuổi đại vận — trái */
+  .cung-dv{
+    position:static !important;
+    flex:0 0 auto !important;
+    font-size:5.5px !important;
+    line-height:1 !important;
+    white-space:nowrap !important;
+    color:var(--red) !important;
+    font-weight:900 !important;
+  }
+
+  /* Tên cung — giữa */
+  .cung-chuc{
+    position:static !important;
+    flex:1 1 0 !important;
+    min-width:0 !important;
+    font-size:5.8px !important;
+    font-weight:900 !important;
+    letter-spacing:0 !important;
+    text-align:center !important;
+    white-space:nowrap !important;
+    overflow:hidden !important;
+    text-overflow:ellipsis !important;
+    padding:0 !important;
+    margin:0 !important;
+    border:none !important;
+    line-height:1 !important;
+    text-transform:uppercase !important;
+    color:var(--red) !important;
+  }
+
+  /* Can chi — phải, viết tắt ngắn */
+  .cung-cc{
+    position:static !important;
+    flex:0 0 auto !important;
+    font-size:4.5px !important;
+    line-height:1 !important;
+    text-align:right !important;
+    white-space:nowrap !important;
+    max-width:22px !important;
+    overflow:hidden !important;
+    text-overflow:clip !important;
+    color:var(--red) !important;
+    font-weight:700 !important;
+  }
+
+  /* ── Sao chính ── */
+  .sao-chinh-wrap{gap:1px !important;margin-top:1px !important;}
+  .sao.chinh{
+    font-size:6.5px !important;
+    line-height:1.1 !important;
+    white-space:nowrap !important;
+    overflow:hidden !important;
+    max-width:100% !important;
+    display:block !important;
+    text-align:center !important;
+  }
+
+  /* ── Sao phụ ── */
+  .sao-phu-wrap{gap:1px !important;padding:0 1px !important;margin-top:1px !important;overflow:hidden !important;}
+  .sao.phu{
+    font-size:5.5px !important;
+    gap:1px !important;
+    line-height:1.05 !important;
+    white-space:nowrap !important;
+  }
+
+  /* ── Badge tứ hóa A/B/C/D ── */
+  .th{width:10px !important;height:10px !important;font-size:5.5px !important;margin-left:1px !important;border-width:1px !important;flex-shrink:0 !important;}
+
+  /* ── Ô trung tâm ── */
+  .cung.center{padding:5px 3px !important;overflow:hidden !important;}
+  .ci-name{font-size:7px !important;margin-bottom:2px !important;line-height:1.2 !important;}
+  .ci-zalo{font-size:6px !important;margin-bottom:2px !important;}
+  .ci-row{font-size:5.5px !important;line-height:1.4 !important;}
+  .ci-cuc{font-size:6.5px !important;margin-top:2px !important;}
+
+  /* ── Bottom ── */
+  .cung-bottom{bottom:1px !important;right:2px !important;line-height:1.1 !important;}
+  .cung-bottom .dv-chuc{font-size:4.5px !important;letter-spacing:0 !important;margin-bottom:2px !important;}
+  .cung-bottom .ln-label{font-size:4px !important;margin-top:2px !important;}
+  .ln-chuc{font-size:4px !important;bottom:1px !important;left:2px !important;line-height:1.1 !important;}
 }
 
 .cung{background:var(--bg);padding:5px 5px 38px 5px;min-height:145px;position:relative;border:1px solid #8B451366;display:flex;flex-direction:column;align-items:stretch;cursor:pointer;}
 .cung:hover{background:#fdf0d0;}
 
-/* Tên cung — đỏ in hoa */
-.cung-chuc{width:100%;text-align:center;font-size:.80rem;font-weight:900;letter-spacing:.5px;text-transform:uppercase;color:var(--red);padding:2px 2px 4px;border-bottom:1px solid #8B451333;margin-bottom:3px;flex-shrink:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+/* Desktop: header wrapper — dùng position relative để cung-dv/cc vẫn absolute */
+.cung-header{position:relative;width:100%;}
 
-/* Can chi — góc phải trên, đỏ */
+/* Tên cung — đỏ in hoa */
+.cung-chuc{width:100%;text-align:center;font-size:.80rem;font-weight:900;letter-spacing:.5px;text-transform:uppercase;color:var(--red);padding:2px 2px 4px;border-bottom:1px solid #8B451333;margin-bottom:3px;flex-shrink:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;display:block;}
+
+/* Can chi — góc phải trên, đỏ — desktop: absolute */
 .cung-cc{position:absolute;top:4px;right:5px;font-size:.70rem;color:var(--red);font-weight:700;line-height:1.3;text-align:right;z-index:2;}
 
-/* Số tuổi đại hạn — góc trái trên, đỏ */
+/* Số tuổi đại hạn — góc trái trên, đỏ — desktop: absolute */
 .cung-dv{position:absolute;top:4px;left:5px;font-size:.78rem;color:var(--red);font-weight:900;z-index:2;}
 
 /* Sao chính — navy đậm */
@@ -190,6 +308,14 @@ body{background:var(--bg);color:var(--text);font-family:'Segoe UI',Arial,sans-se
 .fg{position:relative;}
 .spin{border:3px solid rgba(255,255,255,.35);border-top-color:#fff;border-radius:50%;animation:sp .7s linear infinite;display:inline-block;width:18px;height:18px;}
 @keyframes sp{to{transform:rotate(360deg);}}
+/* Modal preview ảnh lưu */
+#saveModal{display:none;position:fixed;inset:0;z-index:9999;background:rgba(0,0,0,.85);align-items:center;justify-content:center;flex-direction:column;gap:14px;padding:20px;}
+#saveModal.show{display:flex;}
+#saveModal img{max-width:92vw;max-height:60vh;border-radius:8px;box-shadow:0 4px 24px rgba(0,0,0,.6);}
+#saveModal .sm-hint{color:#fff;font-size:13px;text-align:center;opacity:.85;line-height:1.5;}
+#saveModal .sm-btns{display:flex;gap:10px;flex-wrap:wrap;justify-content:center;}
+#saveModal .sm-btn{background:var(--terra);color:#fff;border:none;border-radius:8px;padding:10px 20px;font-size:14px;font-weight:700;cursor:pointer;font-family:inherit;}
+#saveModal .sm-btn.sec{background:transparent;border:1px solid #ffffff66;color:#fff;}
 @media print{.header,.form-card,.action-row,.daihan-wrap{display:none !important;}#result.show{display:block !important;}.ban-outer{padding:40px;}}
 </style>
 </head>
@@ -215,9 +341,9 @@ body{background:var(--bg);color:var(--text);font-family:'Segoe UI',Arial,sans-se
       <div class="fg">
         <label>Ngày sinh (Ngày / Tháng / Năm)</label>
         <div class="date-row">
-          <input type="number" id="ngayDD" placeholder="Ngày" min="1" max="31" value="2">
-          <input type="number" id="ngayMM" placeholder="Tháng" min="1" max="12" value="11">
-          <input type="number" id="ngayYYYY" placeholder="Năm sinh" min="1900" max="2100" value="1989">
+          <input type="number" id="ngayDD" placeholder="Ngày" min="1" max="31">
+          <input type="number" id="ngayMM" placeholder="Tháng" min="1" max="12">
+          <input type="number" id="ngayYYYY" placeholder="Năm sinh" min="1900" max="2100">
         </div>
         <div class="date-hint"><span>Ngày</span><span>Tháng</span><span>Năm</span></div>
       </div>
@@ -225,9 +351,9 @@ body{background:var(--bg);color:var(--text);font-family:'Segoe UI',Arial,sans-se
       <div class="fg">
         <label>Giờ sinh (24h)</label>
         <div style="display:flex;gap:6px;align-items:center;">
-          <input type="number" id="gioH" min="0" max="23" value="18" placeholder="Giờ" style="width:70px;text-align:center;font-size:15px;font-weight:700;">
+          <input type="number" id="gioH" min="0" max="23" placeholder="Giờ" style="width:70px;text-align:center;font-size:15px;font-weight:700;">
           <span style="font-size:18px;font-weight:700;color:var(--text2);">:</span>
-          <input type="number" id="gioM" min="0" max="59" value="30" placeholder="Phút" style="width:70px;text-align:center;font-size:15px;font-weight:700;">
+          <input type="number" id="gioM" min="0" max="59" placeholder="Phút" style="width:70px;text-align:center;font-size:15px;font-weight:700;">
         </div>
       </div>
       <div class="fg">
@@ -296,7 +422,7 @@ const TEN_CHUC=["MỆNH","HUYNH ĐỆ","PHU THÊ","TỬ NỮ","TÀI BẠCH","T�
 const TU_HOA={"Giáp":{loc:"Liêm Trinh",quyen:"Phá Quân",khoa:"Vũ Khúc",ki:"Thái Dương"},"Ất":{loc:"Thiên Cơ",quyen:"Thiên Lương",khoa:"Tử Vi",ki:"Thái Âm"},"Bính":{loc:"Thiên Đồng",quyen:"Thiên Cơ",khoa:"Văn Xương",ki:"Liêm Trinh"},"Đinh":{loc:"Thái Âm",quyen:"Thiên Đồng",khoa:"Thiên Cơ",ki:"Cự Môn"},"Mậu":{loc:"Tham Lang",quyen:"Thái Âm",khoa:"Hữu Bật",ki:"Thiên Cơ"},"Kỷ":{loc:"Vũ Khúc",quyen:"Tham Lang",khoa:"Thiên Lương",ki:"Văn Khúc"},"Canh":{loc:"Thái Dương",quyen:"Vũ Khúc",khoa:"Thái Âm",ki:"Thiên Đồng"},"Tân":{loc:"Cự Môn",quyen:"Thái Dương",khoa:"Văn Khúc",ki:"Văn Xương"},"Nhâm":{loc:"Thiên Lương",quyen:"Tử Vi",khoa:"Tả Phụ",ki:"Vũ Khúc"},"Quý":{loc:"Phá Quân",quyen:"Cự Môn",khoa:"Thái Âm",ki:"Tham Lang"}};
 const KY_COLOR={A:'#00cc55',B:'#dd0000',C:'#1a7fff',D:'#c9a84c'};
 const KY_TXT={A:'#000',B:'#fff',C:'#fff',D:'#000'};
-const CAN_ABB={Giáp:'G',Ất:'Ất',Bính:'B',Đinh:'Đ',Mậu:'Mậu',Kỷ:'Kỷ',Canh:'C',Tân:'Tân',Nhâm:'N',Quý:'Q'};
+const CAN_ABB={Giáp:'G',Ất:'Ấ',Bính:'B',Đinh:'Đ',Mậu:'M',Kỷ:'K',Canh:'C',Tân:'T',Nhâm:'N',Quý:'Q'};
 
 // Lưu niên — tên cung ngắn
 const LN_VONG_NGAN=['Mệnh LN','P.Mẫu LN','Phúc LN','Điền LN','Sự LN','Giao LN','Di LN','Tật LN','Tài LN','Tử LN','Phu LN','Huynh LN'];
@@ -626,35 +752,56 @@ function equalizeCungHeights(){
   cungs.forEach(el=>el.style.minHeight=maxH+'px');
 }
 
-// Auto scale bàn tử vi vừa màn hình trên mobile
+// Auto scale bàn tử vi vừa màn hình
 function autoScaleBan(){
   const scaler=document.getElementById('banScaler');
   const outer=document.getElementById('banOuter');
   const wrap=document.getElementById('banWrap');
   if(!scaler||!outer||!wrap)return;
 
-  // Reset scale trước để đo kích thước thực
-  scaler.style.transform='scale(1)';
-  scaler.style.transformOrigin='top left';
-  scaler.style.width='';
-  outer.style.height='';
+  const isMobile=window.innerWidth<=480;
 
-  const naturalW=wrap.offsetWidth;
-  // Tổng chiều rộng sẵn có = outer width - padding 2 bên (62px*2 trên desktop)
-  const outerPad=window.innerWidth<=700?20:144; // 72px*2
-  const availW=outer.offsetWidth-outerPad;
-
-  if(naturalW>0&&availW>0&&naturalW>availW){
-    const scale=availW/naturalW;
-    scaler.style.transform=`scale(${scale})`;
-    scaler.style.transformOrigin='top left';
-    // Đặt chiều cao outer bằng chiều cao sau scale để không bị overlap
-    const scaledH=wrap.offsetHeight*scale;
-    scaler.style.width=(naturalW)+'px';
-    outer.style.height=(scaledH+outerPad)+'px';
-  } else {
-    scaler.style.transform='scale(1)';
+  if(isMobile){
+    // Mobile: KHÔNG dùng transform:scale — CSS native sizing để text/border sắc nét
+    wrap.style.transform='none';
+    wrap.style.transformOrigin='';
+    wrap.style.width='100%';
+    wrap._mobileScale=null;
+    scaler.style.transform='none';
+    scaler.style.width='100%';
+    scaler.style.height='';
+    scaler.style.overflow='visible';
     outer.style.height='';
+
+  } else {
+    // Desktop: giữ nguyên
+    wrap._mobileScale=null;
+    wrap.style.transform='';
+    wrap.style.transformOrigin='';
+    wrap.style.width='';
+    scaler.style.overflow='';
+    scaler.style.position='';
+    scaler.style.width='';
+    scaler.style.height='';
+    outer.style.height='';
+
+    scaler.style.transform='scale(1)';
+    scaler.style.transformOrigin='top left';
+
+    const naturalW=wrap.offsetWidth;
+    const outerPad=144;
+    const availW=outer.offsetWidth-outerPad;
+
+    if(naturalW>0&&availW>0&&naturalW>availW){
+      const scale=availW/naturalW;
+      scaler.style.transform=`scale(${scale})`;
+      const scaledH=wrap.offsetHeight*scale;
+      scaler.style.width=naturalW+'px';
+      outer.style.height=(scaledH+outerPad)+'px';
+    } else {
+      scaler.style.transform='scale(1)';
+      outer.style.height='';
+    }
   }
 }
 
@@ -664,68 +811,128 @@ function drawAllArrows(lyTamList,huongTamList){
   const outer=document.querySelector('.ban-outer');if(!outer)return;
   document.getElementById('banSVG')?.remove();
 
-  // SVG đặt trong ban-outer, tọa độ = tọa độ của ban-outer
-  const OW=outer.offsetWidth, OH=outer.offsetHeight;
+  // Tính mobileScale: so sánh chiều rộng thực của wrap với desktop chuẩn
+  // Desktop: ban-tuvi ~700px. Mobile: nhỏ hơn nhiều
+  const DESKTOP_REF=700; // chiều rộng tham chiếu desktop
+  const mobileScale=Math.min(1, wrap.offsetWidth/DESKTOP_REF);
+
+  // Các giá trị scale theo mobileScale
+  const HEAD        = Math.round(13 * mobileScale);      // đầu mũi tên ly tâm
+  const LY_LEN      = Math.round(34 * mobileScale);      // độ dài mũi tên ly tâm
+  const LY_SW       = +(3.5 * mobileScale).toFixed(1);   // stroke-width ly tâm
+  const LY_FSIZ     = Math.round(19 * mobileScale);      // font label ly tâm
+  const HT_SW       = +(2 * mobileScale).toFixed(1);     // stroke-width hướng tâm
+  const HT_R        = +(10 * mobileScale).toFixed(1);    // radius badge A/B/C/D
+  const HT_FSIZ     = Math.round(10 * mobileScale);      // font badge
+  const HT_BDIST    = Math.round(48 * mobileScale);      // badge distance from tip
+  const HT_STOP_GAP = +(6 * mobileScale).toFixed(1);     // gap trước đầu nhọn
+  const ARR_PAIR_OFF= +(14 * mobileScale).toFixed(1);    // offset giữa 2 mũi tên song song
+
+  const W=wrap.offsetWidth, H=wrap.offsetHeight;
   const ns='http://www.w3.org/2000/svg';
   const svg=document.createElementNS(ns,'svg');
   svg.id='banSVG';
-  svg.setAttribute('width',OW);svg.setAttribute('height',OH);
-  svg.style.cssText='position:absolute;top:0;left:0;width:100%;height:100%;overflow:visible;pointer-events:none;z-index:40;';
+  svg.setAttribute('width', W);
+  svg.setAttribute('height', H);
+  svg.style.cssText='position:absolute;top:0;left:0;overflow:visible;pointer-events:none;z-index:40;shape-rendering:geometricPrecision;text-rendering:geometricPrecision;';
   const defs=document.createElementNS(ns,'defs');
-  ['A','B','C','D'].forEach(k=>{const m=document.createElementNS(ns,'marker');m.setAttribute('id',`mk-${k}`);m.setAttribute('markerWidth','9');m.setAttribute('markerHeight','7');m.setAttribute('refX','8');m.setAttribute('refY','3.5');m.setAttribute('orient','auto');const p=document.createElementNS(ns,'path');p.setAttribute('d','M0,0 L9,3.5 L0,7 Z');p.setAttribute('fill',KY_COLOR[k]);m.appendChild(p);defs.appendChild(m);});
-  svg.appendChild(defs);
-  // Đặt SVG vào ban-outer (không phải ban-wrap)
-  outer.style.position='relative';
-  outer.appendChild(svg);
 
-  // localRect: tính tọa độ cung relative to ban-outer
+  // Marker đầu mũi tên — kích thước theo mobileScale
+  const mkW=+(9*mobileScale).toFixed(1), mkH=+(7*mobileScale).toFixed(1);
+  ['A','B','C','D'].forEach(k=>{
+    const m=document.createElementNS(ns,'marker');
+    m.setAttribute('id',`mk-${k}`);
+    m.setAttribute('markerWidth', mkW);
+    m.setAttribute('markerHeight', mkH);
+    m.setAttribute('refX', +(8*mobileScale).toFixed(1));
+    m.setAttribute('refY', +(3.5*mobileScale).toFixed(1));
+    m.setAttribute('orient','auto');
+    m.setAttribute('markerUnits','userSpaceOnUse');
+    const mw=+(9*mobileScale).toFixed(1), mh=+(7*mobileScale).toFixed(1);
+    const p=document.createElementNS(ns,'path');
+    p.setAttribute('d',`M0,0 L${mw},${+(3.5*mobileScale).toFixed(1)} L0,${mh} Z`);
+    p.setAttribute('fill',KY_COLOR[k]);
+    m.appendChild(p);defs.appendChild(m);
+  });
+  svg.appendChild(defs);
+  wrap.style.position='relative';
+  wrap.appendChild(svg);
+
+  // localRect: tọa độ relative to banWrap
   function localRect(el){
     let lx=0,ly=0,cur=el;
-    while(cur&&cur!==outer){lx+=cur.offsetLeft;ly+=cur.offsetTop;cur=cur.offsetParent;}
+    while(cur&&cur!==wrap){lx+=cur.offsetLeft;ly+=cur.offsetTop;cur=cur.offsetParent;}
     return{l:lx,t:ly,r:lx+el.offsetWidth,b:ly+el.offsetHeight,cx:lx+el.offsetWidth/2,cy:ly+el.offsetHeight/2};
   }
   function intersect(p1,p2,rect){const dx=p2[0]-p1[0],dy=p2[1]-p1[1];const segs=[[rect.l,rect.t,rect.r,rect.t],[rect.l,rect.b,rect.r,rect.b],[rect.l,rect.t,rect.l,rect.b],[rect.r,rect.t,rect.r,rect.b]];let best=null,bestT=Infinity;segs.forEach(([ax,ay,bx,by])=>{const ex=bx-ax,ey=by-ay,den=dx*ey-dy*ex;if(Math.abs(den)<1e-9)return;const t=((ax-p1[0])*ey-(ay-p1[1])*ex)/den,u=((ax-p1[0])*dy-(ay-p1[1])*dx)/den;if(t>0.01&&t<bestT&&u>=-0.01&&u<=1.01){bestT=t;best=[p1[0]+t*dx,p1[1]+t*dy];}});return best;}
 
   function addLyTamArrow(sx,sy,ex,ey,k,showLabel){
-    const ang=Math.atan2(ey-sy,ex-sx),HEAD=13;
-    const hit=document.createElementNS(ns,'line');hit.setAttribute('x1',sx);hit.setAttribute('y1',sy);hit.setAttribute('x2',ex+Math.cos(ang)*(HEAD+18));hit.setAttribute('y2',ey+Math.sin(ang)*(HEAD+18));hit.setAttribute('stroke','transparent');hit.setAttribute('stroke-width','20');hit.style.pointerEvents='stroke';hit.className='arrow-lytam';
-    const line=document.createElementNS(ns,'line');line.setAttribute('x1',sx);line.setAttribute('y1',sy);line.setAttribute('x2',ex);line.setAttribute('y2',ey);line.setAttribute('stroke',KY_COLOR[k]);line.setAttribute('stroke-width','3.5');line.className='arrow-lytam';line.style.pointerEvents='none';
-    const tipX=ex+Math.cos(ang)*HEAD,tipY=ey+Math.sin(ang)*HEAD;
-    const h1x=ex-Math.sin(ang)*(HEAD*.65),h1y=ey+Math.cos(ang)*(HEAD*.65);
-    const h2x=ex+Math.sin(ang)*(HEAD*.65),h2y=ey-Math.cos(ang)*(HEAD*.65);
-    const arrow=document.createElementNS(ns,'path');arrow.setAttribute('d',`M${tipX},${tipY} L${h1x},${h1y} L${h2x},${h2y} Z`);arrow.setAttribute('fill',KY_COLOR[k]);arrow.setAttribute('stroke',KY_COLOR[k]);arrow.setAttribute('stroke-width','1.5');arrow.setAttribute('stroke-linejoin','round');arrow.style.pointerEvents='none';arrow.className='arrow-lytam';
+    const ang=Math.atan2(ey-sy,ex-sx);
+    const hit=document.createElementNS(ns,'line');
+    hit.setAttribute('x1',sx);hit.setAttribute('y1',sy);
+    hit.setAttribute('x2',ex+Math.cos(ang)*(HEAD+18*mobileScale));
+    hit.setAttribute('y2',ey+Math.sin(ang)*(HEAD+18*mobileScale));
+    hit.setAttribute('stroke','transparent');hit.setAttribute('stroke-width',String(20*mobileScale));
+    hit.style.pointerEvents='stroke';hit.className='arrow-lytam';
+
+    const line=document.createElementNS(ns,'line');
+    line.setAttribute('x1',sx);line.setAttribute('y1',sy);
+    line.setAttribute('x2',ex);line.setAttribute('y2',ey);
+    line.setAttribute('stroke',KY_COLOR[k]);line.setAttribute('stroke-width',String(LY_SW));
+    line.className='arrow-lytam';line.style.pointerEvents='none';
+
+    const tipX=ex+Math.cos(ang)*HEAD, tipY=ey+Math.sin(ang)*HEAD;
+    const h1x=ex-Math.sin(ang)*(HEAD*.65), h1y=ey+Math.cos(ang)*(HEAD*.65);
+    const h2x=ex+Math.sin(ang)*(HEAD*.65), h2y=ey-Math.cos(ang)*(HEAD*.65);
+    const arrow=document.createElementNS(ns,'path');
+    arrow.setAttribute('d',`M${tipX},${tipY} L${h1x},${h1y} L${h2x},${h2y} Z`);
+    arrow.setAttribute('fill',KY_COLOR[k]);arrow.setAttribute('stroke',KY_COLOR[k]);
+    arrow.setAttribute('stroke-width',String(+(1.5*mobileScale).toFixed(1)));
+    arrow.setAttribute('stroke-linejoin','round');
+    arrow.style.pointerEvents='none';arrow.className='arrow-lytam';
+
     svg.appendChild(hit);svg.appendChild(line);svg.appendChild(arrow);
-    if(showLabel){const isUp=Math.sin(ang)<-.5,isDown=Math.sin(ang)>.5;let lblX,lblY;if(isUp){lblX=tipX+22;lblY=tipY+6;}else if(isDown){lblX=tipX+23;lblY=tipY;}else{lblX=tipX;lblY=tipY+25;}const txt=document.createElementNS(ns,'text');txt.setAttribute('x',String(lblX));txt.setAttribute('y',String(lblY));txt.setAttribute('text-anchor','middle');txt.setAttribute('font-size','19');txt.setAttribute('fill',KY_COLOR[k]);txt.setAttribute('font-weight','300');txt.style.filter='drop-shadow(0 0 3px '+KY_COLOR[k]+')';txt.style.pointerEvents='none';txt.textContent=k;txt.className='arrow-lytam';svg.appendChild(txt);}
+
+    if(showLabel){
+      const isUp=Math.sin(ang)<-.5,isDown=Math.sin(ang)>.5;
+      let lblX,lblY;
+      const lOff=+(22*mobileScale).toFixed(1);
+      if(isUp){lblX=tipX+lOff;lblY=tipY+6*mobileScale;}
+      else if(isDown){lblX=tipX+lOff;lblY=tipY;}
+      else{lblX=tipX;lblY=tipY+25*mobileScale;}
+      const txt=document.createElementNS(ns,'text');
+      txt.setAttribute('x',String(lblX));txt.setAttribute('y',String(lblY));
+      txt.setAttribute('text-anchor','middle');txt.setAttribute('font-size',String(LY_FSIZ));
+      txt.setAttribute('fill',KY_COLOR[k]);txt.setAttribute('font-weight','300');
+      txt.style.filter=`drop-shadow(0 0 ${2*mobileScale}px ${KY_COLOR[k]})`;
+      txt.style.pointerEvents='none';txt.textContent=k;txt.className='arrow-lytam';
+      svg.appendChild(txt);
+    }
   }
 
-  function addHuongTamArrow(x1,y1,x2,y2,k,cpKey,badgeDist=20){
+  function addHuongTamArrow(x1,y1,x2,y2,k,cpKey,badgeDist){
     if(!arrowCPs[cpKey])arrowCPs[cpKey]={p1x:x1,p1y:y1,p2x:x2,p2y:y2,cx:(x1+x2)/2,cy:(y1+y2)/2};
     const st=arrowCPs[cpKey];
     const g=document.createElementNS(ns,'g');g.setAttribute('data-huongtam','1');if(!showArrowsFlag)g.style.display='none';
     const pathEl=document.createElementNS(ns,'path');
     const hitPath=document.createElementNS(ns,'path');
     const bc=document.createElementNS(ns,'circle');
-    bc.setAttribute('r','10');bc.setAttribute('fill',KY_COLOR[k]);
-    bc.setAttribute('stroke','#fff');bc.setAttribute('stroke-width','1.5');
+    bc.setAttribute('r',String(HT_R));bc.setAttribute('fill',KY_COLOR[k]);
+    bc.setAttribute('stroke','#fff');bc.setAttribute('stroke-width',String(+(1.5*mobileScale).toFixed(1)));
     bc.style.pointerEvents='none';
     const bt=document.createElementNS(ns,'text');
     bt.setAttribute('text-anchor','middle');bt.setAttribute('dominant-baseline','central');
-    bt.setAttribute('font-size','10');bt.setAttribute('fill',KY_TXT[k]);
+    bt.setAttribute('font-size',String(HT_FSIZ));bt.setAttribute('fill',KY_TXT[k]);
     bt.setAttribute('font-weight','900');bt.textContent=k;bt.style.pointerEvents='none';
 
     function update(){
       const ang=Math.atan2(st.p2y-st.cy,st.p2x-st.cx);
-      // Đường dừng trước đầu nhọn 6px
-      const ex=st.p2x-Math.cos(ang)*6, ey=st.p2y-Math.sin(ang)*6;
+      const ex=st.p2x-Math.cos(ang)*HT_STOP_GAP, ey=st.p2y-Math.sin(ang)*HT_STOP_GAP;
       const d=`M ${st.p1x} ${st.p1y} Q ${st.cx} ${st.cy} ${ex} ${ey}`;
       pathEl.setAttribute('d',d); hitPath.setAttribute('d',d);
-
-      // Tính hướng từ p1→p2 (vector dọc đường)
       const dx=st.p2x-st.p1x, dy=st.p2y-st.p1y;
       const len=Math.sqrt(dx*dx+dy*dy)||1;
-      const ux=dx/len, uy=dy/len; // unit vector p1→p2
-
-      // Badge nằm trên đường, lùi từ p2 về p1 đúng badgeDist px
+      const ux=dx/len, uy=dy/len;
       const bx=st.p2x - ux*badgeDist;
       const by=st.p2y - uy*badgeDist;
       bc.setAttribute('cx',bx); bc.setAttribute('cy',by);
@@ -733,10 +940,12 @@ function drawAllArrows(lyTamList,huongTamList){
     }
 
     pathEl.setAttribute('fill','none');pathEl.setAttribute('stroke',KY_COLOR[k]);
-    pathEl.setAttribute('stroke-width','2');pathEl.setAttribute('marker-end',`url(#mk-${k})`);
+    pathEl.setAttribute('stroke-width',String(HT_SW));
+    pathEl.setAttribute('marker-end',`url(#mk-${k})`);
     pathEl.setAttribute('opacity','.9');pathEl.style.pointerEvents='none';
     hitPath.setAttribute('fill','none');hitPath.setAttribute('stroke','transparent');
-    hitPath.setAttribute('stroke-width','14');hitPath.style.pointerEvents='stroke';
+    hitPath.setAttribute('stroke-width',String(+(14*mobileScale).toFixed(1)));
+    hitPath.style.pointerEvents='stroke';
     [pathEl,hitPath,bc,bt].forEach(el=>g.appendChild(el));
     svg.appendChild(g); update();
   }
@@ -749,15 +958,43 @@ function drawAllArrows(lyTamList,huongTamList){
     const r=localRect(el);
     const chucEl=el.querySelector('.cung-chuc');
     let chucCX=r.cx,chucCY=r.t+10;
-    if(chucEl){let lx2=0,ly2=0,cur=chucEl;while(cur&&cur!==outer){lx2+=cur.offsetLeft;ly2+=cur.offsetTop;cur=cur.offsetParent;}chucCX=lx2+chucEl.offsetWidth/2;chucCY=ly2+chucEl.offsetHeight/2;}
+    if(chucEl){
+      let lx=0,ly=0,cur=chucEl;
+      while(cur&&cur!==wrap){lx+=cur.offsetLeft;ly+=cur.offsetTop;cur=cur.offsetParent;}
+      chucCX=lx+chucEl.offsetWidth/2;
+      chucCY=ly+chucEl.offsetHeight/2;
+    }
     const byDir={};items.forEach(item=>{if(!byDir[item.dir])byDir[item.dir]=[];byDir[item.dir].push(item);});
     Object.entries(byDir).forEach(([dir,dirItems])=>{
       const ang=dirAng[dir],perp=[-Math.sin(ang),Math.cos(ang)],multi=dirItems.length>1;
-      dirItems.forEach((item,i)=>{const off=(i-(dirItems.length-1)/2)*14;let sx,sy;if(dir==='up'){sx=chucCX+perp[0]*off;sy=r.t;}else if(dir==='down'){sx=chucCX+perp[0]*off;sy=r.b;}else if(dir==='left'){sx=r.l;sy=r.cy+off;}else{sx=r.r;sy=r.cy+off;}addLyTamArrow(sx,sy,sx+Math.cos(ang)*34,sy+Math.sin(ang)*34,item.ky,!multi);});
+      dirItems.forEach((item,i)=>{
+        const off=(i-(dirItems.length-1)/2)*ARR_PAIR_OFF;
+        let sx,sy;
+        if(dir==='up'){sx=chucCX+perp[0]*off;sy=r.t;}
+        else if(dir==='down'){sx=chucCX+perp[0]*off;sy=r.b;}
+        else if(dir==='left'){sx=r.l;sy=r.cy+off;}
+        else{sx=r.r;sy=r.cy+off;}
+        addLyTamArrow(sx,sy,sx+Math.cos(ang)*LY_LEN,sy+Math.sin(ang)*LY_LEN,item.ky,!multi);
+      });
       if(!multi)return;
-      const AT=47;let lax,lay;if(dir==='up'){lax=chucCX+22;lay=r.t-AT+6;}else if(dir==='down'){lax=chucCX+23;lay=r.b+AT;}else if(dir==='left'){lax=r.l-AT+4;lay=r.cy+25;}else{lax=r.r+AT-4;lay=r.cy+25;}
-      const N=dirItems.length,STEP=13;
-      dirItems.forEach((item,i)=>{const lbl=document.createElementNS(ns,'text');lbl.setAttribute('x',String(lax+(i-(N-1)/2)*STEP));lbl.setAttribute('y',String(lay+6));lbl.setAttribute('text-anchor','middle');lbl.setAttribute('font-size','19');lbl.setAttribute('fill',KY_COLOR[item.ky]);lbl.setAttribute('font-weight','300');lbl.style.filter='drop-shadow(0 0 3px '+KY_COLOR[item.ky]+')';lbl.style.pointerEvents='none';lbl.textContent=item.ky;lbl.className='arrow-lytam';svg.appendChild(lbl);});
+      const AT=47*mobileScale;
+      let lax,lay;
+      if(dir==='up'){lax=chucCX+22*mobileScale;lay=r.t-AT+6*mobileScale;}
+      else if(dir==='down'){lax=chucCX+23*mobileScale;lay=r.b+AT;}
+      else if(dir==='left'){lax=r.l-AT+4*mobileScale;lay=r.cy+25*mobileScale;}
+      else{lax=r.r+AT-4*mobileScale;lay=r.cy+25*mobileScale;}
+      const N=dirItems.length,STEP=13*mobileScale;
+      dirItems.forEach((item,i)=>{
+        const lbl=document.createElementNS(ns,'text');
+        lbl.setAttribute('x',String(lax+(i-(N-1)/2)*STEP));
+        lbl.setAttribute('y',String(lay+6*mobileScale));
+        lbl.setAttribute('text-anchor','middle');
+        lbl.setAttribute('font-size',String(LY_FSIZ));
+        lbl.setAttribute('fill',KY_COLOR[item.ky]);lbl.setAttribute('font-weight','300');
+        lbl.style.filter=`drop-shadow(0 0 ${2*mobileScale}px ${KY_COLOR[item.ky]})`;
+        lbl.style.pointerEvents='none';lbl.textContent=item.ky;lbl.className='arrow-lytam';
+        svg.appendChild(lbl);
+      });
     });
   });
 
@@ -767,7 +1004,6 @@ function drawAllArrows(lyTamList,huongTamList){
     const key=[Math.min(item.srcIdx,item.dstIdx),Math.max(item.srcIdx,item.dstIdx)].join('-');
     if(!pairMap[key])pairMap[key]=[];pairMap[key].push(item);
   });
-  // Nhóm theo dstIdx: các mũi tên cùng điểm đến badge phải cách nhau
   const dstGroups={};
   huongTamList.forEach(item=>{
     const dk=item.dstIdx;
@@ -780,91 +1016,128 @@ function drawAllArrows(lyTamList,huongTamList){
     items.forEach((item,i)=>{
       const sEl=document.getElementById(`cung-${item.srcIdx}`),dEl=document.getElementById(`cung-${item.dstIdx}`);
       if(!sEl||!dEl)return;
-      const sR=localRect(sEl),dR=localRect(dEl),ang=Math.atan2(dR.cy-sR.cy,dR.cx-sR.cx),
-        off=(i-(n-1)/2)*14,px=-Math.sin(ang)*off,py=Math.cos(ang)*off;
+      const sR=localRect(sEl),dR=localRect(dEl),
+        ang=Math.atan2(dR.cy-sR.cy,dR.cx-sR.cx),
+        off=(i-(n-1)/2)*ARR_PAIR_OFF,
+        px=-Math.sin(ang)*off,py=Math.cos(ang)*off;
       const sFrom=[sR.cx+px,sR.cy+py],sTo=[dR.cx+px,dR.cy+py];
       const ptS=intersect(sFrom,sTo,sR)||sFrom,ptD=intersect(sTo,sFrom,dR)||sTo;
-      // Tìm vị trí trong nhóm cùng điểm đến để tính khoảng cách badge
-      addHuongTamArrow(ptS[0],ptS[1],ptD[0],ptD[1],item.ky,`${item.srcIdx}-${item.dstIdx}-${item.ky}-${i}`,48);
+      addHuongTamArrow(ptS[0],ptS[1],ptD[0],ptD[1],item.ky,`${item.srcIdx}-${item.dstIdx}-${item.ky}-${i}`,HT_BDIST);
     });
   });
 }
 
-// ── API ──
+// ── SAVE LÁ SỐ ──
 async function saveLaSo(){
-  const outer=document.querySelector('.ban-outer');
-  if(!outer){alert('Chưa có lá số!');return;}
+  const wrap=document.getElementById('banWrap');
+  const scaler=document.getElementById('banScaler');
+  const outer=document.getElementById('banOuter');
+  if(!wrap||!outer){alert('Chưa có lá số!');return;}
   const btn=document.getElementById('btnSave');
   if(btn){btn.disabled=true;btn.textContent='⏳...';}
 
-  // Vẽ lại mũi tên trước
+  const BG='#fdf6e3'; // vàng kem sáng — nhất quán hiển thị và save
+
+  // 1. Reset mobile
+  const savedTransform=wrap.style.transform,savedWidth=wrap.style.width,savedMobileScale=wrap._mobileScale;
+  const savedScalerW=scaler?scaler.style.width:'',savedScalerH=scaler?scaler.style.height:'',savedOuterH=outer.style.height;
+  wrap.style.transform='none';wrap.style.width='';wrap._mobileScale=null;
+  if(scaler){scaler.style.width='';scaler.style.height='';scaler.style.overflow='';}
+  outer.style.height='';
+
   equalizeCungHeights();
   Object.keys(arrowCPs).forEach(k=>delete arrowCPs[k]);
   if(_cachedArrowData) drawAllArrows(_cachedArrowData.lyTamList,_cachedArrowData.huongTamList);
-  await new Promise(r=>setTimeout(r,300));
+  await new Promise(r=>setTimeout(r,350));
 
-  const SCALE=2;
-  const bg='#fdf6e3';
+  // 2. Kích thước + DPR
+  const banW=wrap.offsetWidth, banH=wrap.offsetHeight;
+  const PAD_H=80, PAD_V=70; // đủ rộng cho mũi tên ly tâm dài nhất
+  const DPR=Math.min(window.devicePixelRatio||1,2);
 
-  // Ẩn SVG, chụp ban-outer (bao gồm bàn + padding xung quanh)
+  // 3. Chụp HTML (ẩn SVG)
   const liveSVG=document.getElementById('banSVG');
-  if(liveSVG) liveSVG.style.display='none';
-
+  if(liveSVG)liveSVG.style.display='none';
   let boardCanvas;
   try{
-    boardCanvas=await html2canvas(outer,{
-      backgroundColor:bg,scale:SCALE,useCORS:true,logging:false,allowTaint:true,
-      scrollX:0,scrollY:0,
-    });
+    boardCanvas=await html2canvas(wrap,{backgroundColor:BG,scale:DPR,useCORS:true,logging:false,allowTaint:true,scrollX:0,scrollY:0,width:banW,height:banH});
   }catch(e){
     if(liveSVG)liveSVG.style.display='';
-    alert('Lỗi: '+e.message);
-    if(btn){btn.disabled=false;btn.textContent='💾 Lưu ảnh lá số';}
-    return;
+    _restoreMobile(wrap,scaler,outer,savedTransform,savedWidth,savedMobileScale,savedScalerW,savedScalerH,savedOuterH);
+    alert('Lỗi: '+e.message);if(btn){btn.disabled=false;btn.textContent='💾 Lưu ảnh lá số';}return;
   }
-  if(liveSVG) liveSVG.style.display='';
+  if(liveSVG)liveSVG.style.display='';
 
-  // Vẽ SVG đè lên canvas
-  const out=document.createElement('canvas');
-  out.width=boardCanvas.width; out.height=boardCanvas.height;
-  const ctx=out.getContext('2d');
-  ctx.drawImage(boardCanvas,0,0);
+  // 4. Canvas export — nền vàng kem + padding
+  const expW=(banW+PAD_H*2)*DPR, expH=(banH+PAD_V*2)*DPR;
+  const exportCanvas=document.createElement('canvas');
+  exportCanvas.width=expW;exportCanvas.height=expH;
+  const ctx=exportCanvas.getContext('2d');
+  ctx.fillStyle=BG; ctx.fillRect(0,0,expW,expH);
+  ctx.drawImage(boardCanvas,PAD_H*DPR,PAD_V*DPR,banW*DPR,banH*DPR);
 
+  // 5. SVG mũi tên — mở rộng viewBox bao trọn mũi tên rìa
   const liveSVG2=document.getElementById('banSVG');
-  if(!liveSVG2){finish(out);return;}
+  if(liveSVG2){
+    await new Promise(resolve=>{
+      const ser=new XMLSerializer();
+      let s=ser.serializeToString(liveSVG2);
+      const vbX=-PAD_H,vbY=-PAD_V,vbW=banW+PAD_H*2,vbH=banH+PAD_V*2;
+      s=s.replace(/\swidth="[^"]*"/,` width="${vbW}"`).replace(/\sheight="[^"]*"/,` height="${vbH}"`).replace(/<svg /,`<svg viewBox="${vbX} ${vbY} ${vbW} ${vbH}" `);
+      const b=new Blob([s],{type:'image/svg+xml;charset=utf-8'}),url=URL.createObjectURL(b),img=new Image();
+      img.onload=()=>{ctx.drawImage(img,0,0,vbW*DPR,vbH*DPR);URL.revokeObjectURL(url);resolve();};
+      img.onerror=()=>{URL.revokeObjectURL(url);resolve();};img.src=url;
+    });
+  }
 
-  const ser=new XMLSerializer();
-  const svgStr=ser.serializeToString(liveSVG2);
-  const OW=outer.offsetWidth, OH=outer.offsetHeight;
-  const blob2=new Blob([svgStr],{type:'image/svg+xml;charset=utf-8'});
-  const url=URL.createObjectURL(blob2);
-  const img=new Image();
-  img.onload=()=>{
-    ctx.drawImage(img,0,0,OW*SCALE,OH*SCALE);
-    URL.revokeObjectURL(url);
-    finish(out);
-  };
-  img.onerror=()=>{URL.revokeObjectURL(url);finish(out);};
-  img.src=url;
+  // 6. Restore mobile
+  _restoreMobile(wrap,scaler,outer,savedTransform,savedWidth,savedMobileScale,savedScalerW,savedScalerH,savedOuterH);
+  setTimeout(()=>{Object.keys(arrowCPs).forEach(k=>delete arrowCPs[k]);if(_cachedArrowData)drawAllArrows(_cachedArrowData.lyTamList,_cachedArrowData.huongTamList);},150);
 
-  function finish(canvas){
-    const hoTen=(document.getElementById('hoTen').value||'laso').replace(/\s+/g,'_');
-    const dd=document.getElementById('ngayDD').value||'';
-    const mm=document.getElementById('ngayMM').value||'';
-    const yy=document.getElementById('ngayYYYY').value||'';
-    const fileName=`TuVi_${hoTen}_${dd}-${mm}-${yy}.png`;
-    if(window.showSaveFilePicker){
-      canvas.toBlob(async b=>{
-        try{const fh=await window.showSaveFilePicker({suggestedName:fileName,types:[{description:'PNG',accept:{'image/png':['.png']}}]});const ws=await fh.createWritable();await ws.write(b);await ws.close();}
-        catch(e){if(e.name!=='AbortError'){const lnk=document.createElement('a');lnk.download=fileName;lnk.href=URL.createObjectURL(b);lnk.click();}}
-        if(btn){btn.disabled=false;btn.textContent='💾 Lưu ảnh lá số';}
-      },'image/png');
-    }else{
-      const lnk=document.createElement('a');lnk.download=fileName;
-      lnk.href=canvas.toDataURL('image/png');lnk.click();
+  // 7. Tên file + xuất
+  const hoTen=(document.getElementById('hoTen').value||'laso').replace(/\s+/g,'_');
+  const dd=document.getElementById('ngayDD').value||'',mm2=document.getElementById('ngayMM').value||'',yy=document.getElementById('ngayYYYY').value||'';
+  const fileName=`TuVi_${hoTen}_${dd}-${mm2}-${yy}.png`;
+
+  exportCanvas.toBlob(async blob=>{
+    if(!blob){if(btn){btn.disabled=false;btn.textContent='💾 Lưu ảnh lá số';}alert('Không tạo được ảnh.');return;}
+    const ua=navigator.userAgent||'';
+    const isWebView=/FBAN|FBAV|FB_IAB|Instagram|Line\/|MicroMessenger/.test(ua)||/(iPhone|iPod|iPad).*AppleWebKit(?!.*Safari)/i.test(ua)||/Android.*wv\)/.test(ua);
+
+    if(!isWebView && window.showSaveFilePicker){
+      try{
+        const fh=await window.showSaveFilePicker({suggestedName:fileName,types:[{description:'PNG',accept:{'image/png':['.png']}}]});
+        const ws=await fh.createWritable();await ws.write(blob);await ws.close();
+        if(btn){btn.disabled=false;btn.textContent='💾 Lưu ảnh lá số';}return;
+      }catch(e){if(e.name==='AbortError'){if(btn){btn.disabled=false;btn.textContent='💾 Lưu ảnh lá số';}return;}}
+    }
+
+    if(!isWebView){
+      const u=URL.createObjectURL(blob),lnk=document.createElement('a');
+      lnk.href=u;lnk.download=fileName;lnk.style.display='none';
+      document.body.appendChild(lnk);lnk.click();document.body.removeChild(lnk);
+      setTimeout(()=>URL.revokeObjectURL(u),2000);
+      if(btn){btn.disabled=false;btn.textContent='💾 Lưu ảnh lá số';}
+    } else {
+      const u=URL.createObjectURL(blob);
+      const mi=document.getElementById('saveModalImg');if(mi)mi.src=u;
+      const ob=document.querySelector('#saveModal .sm-btn');if(ob)ob.onclick=()=>window.open(u,'_blank');
+      document.getElementById('saveModal')?.classList.add('show');
       if(btn){btn.disabled=false;btn.textContent='💾 Lưu ảnh lá số';}
     }
+  },'image/png');
+}
+
+function _restoreMobile(wrap,scaler,outer,savedTransform,savedWidth,savedMobileScale,savedScalerW,savedScalerH,savedOuterH){
+  wrap.style.transform=savedTransform;
+  wrap.style.width=savedWidth;
+  wrap._mobileScale=savedMobileScale;
+  if(scaler){
+    scaler.style.width=savedScalerW;
+    scaler.style.height=savedScalerH;
+    if(savedMobileScale)scaler.style.overflow='visible';
   }
+  outer.style.height=savedOuterH;
 }
 
 function _printLaSo(){}
@@ -1010,9 +1283,11 @@ function render(d){
       const borderStyle=iM?'border:2px solid #c0392b !important;':iT?'border:2px solid #1a3a9b !important;':'';
 
       banHtml+=`<div class="cung" id="cung-${idx}" style="${borderStyle}">
-        ${dvTuoi!==''?`<div class="cung-dv">${dvTuoi}</div>`:''}
-        <div class="cung-cc">${abbCC(canChiCung)}</div>
-        <div class="cung-chuc">${TEN_CHUC[chucIdx]}</div>
+        <div class="cung-header">
+          <span class="cung-dv">${dvTuoi!==''?dvTuoi:''}</span>
+          <span class="cung-chuc">${TEN_CHUC[chucIdx]}</span>
+          <span class="cung-cc">${abbCC(canChiCung)}</span>
+        </div>
         <div class="sao-chinh-wrap">${chinhHtml}</div>
         ${phuHtml?`<div class="sao-phu-wrap">${phuHtml}</div>`:''}
         <div class="ln-chuc" style="display:none">${lnThang?`<span style="color:#ff8c00;font-weight:900">${lnThang}</span> · `:''}<span>${lnCungTen}</span></div>
@@ -1085,5 +1360,15 @@ function render(d){
   window.addEventListener('resize',window._arrowWinResize);
 }
 </script>
+<!-- Modal preview ảnh khi không download được -->
+<div id="saveModal">
+  <img id="saveModalImg" src="" alt="Lá số tử vi">
+  <div class="sm-hint">📱 Nhấn giữ vào ảnh để lưu về máy</div>
+  <div class="sm-btns">
+    <button class="sm-btn" onclick="document.getElementById('saveModalImg').src&&window.open(document.getElementById('saveModalImg').src,'_blank')">🔗 Mở ảnh mới</button>
+    <button class="sm-btn sec" onclick="document.getElementById('saveModal').classList.remove('show')">✕ Đóng</button>
+  </div>
+</div>
+
 </body>
 </html>

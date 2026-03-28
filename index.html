@@ -790,10 +790,15 @@ async function guiZalo() {
   btn.disabled = true;
   btn.textContent = 'Đang gửi...';
 
-  const appsUrl = 'https://script.google.com/macros/s/AKfycbzHbH8Qan1lEU-ZcRByIt5jTyU9WMWhS9BiKko_HgipgoIA-uTOMRBAdcb6bP-2bXch/exec';
+  const BOT_TOKEN = '8598441251:AAE2ESSXJ_mwEmIE94zcXgvuHX-Fhf_Mqvc';
+  const CHAT_ID   = '6424509010';
 
   try {
-    const res = await fetch(appsUrl + '?text=' + encodeURIComponent(noidung));
+    const res = await fetch(`https://api.telegram.org/bot${BOT_TOKEN}/sendMessage`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ chat_id: CHAT_ID, text: noidung })
+    });
     const data = await res.json();
     if (data.ok) {
       btn.textContent = '✅ Đã gửi thành công!';
