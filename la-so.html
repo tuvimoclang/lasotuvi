@@ -1598,14 +1598,10 @@ function render(d){
   if(desc) desc.textContent=`Đang mở trong ${app}. Trình duyệt trong app có thể hạn chế lưu ảnh — hãy mở bằng Safari hoặc Chrome để dùng đầy đủ.`;
   if(banner) banner.classList.add('show');
 
-  // Hiện nút Chia sẻ ảnh nếu Web Share API có sẵn
-  if(navigator.share){
-    const shareBtn=document.getElementById('iabShareBtn');
-    if(shareBtn) shareBtn.style.display='';
-  }
-  // Hiện nút Mở ảnh riêng luôn (blob URL)
-  const openBtn=document.getElementById('iabOpenImgBtn');
-  if(openBtn) openBtn.style.display='';
+  // Hiện nút Chia sẻ ảnh / Mở ảnh riêng: ẩn theo yêu cầu
+  // (chỉ giữ nút Copy link)
+  // const shareBtn=document.getElementById('iabShareBtn');
+  // const openBtn=document.getElementById('iabOpenImgBtn');
 })();
 
 // Chia sẻ ảnh từ banner (export nhanh rồi share)
