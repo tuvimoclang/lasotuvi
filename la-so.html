@@ -1095,6 +1095,17 @@ function showOpenInBrowserHint(){
   modal?.classList.add('show');
 }
 
+// ── Padding export riêng cho từng thiết bị ─────────────
+// Chỉnh các giá trị này nếu cần tinh chỉnh sau này
+const EXPORT_PAD_DESKTOP = { top:56, right:64, bottom:56, left:64 };
+const EXPORT_PAD_MOBILE  = { top:28, right:32, bottom:28, left:32 };
+
+function getChartExportPad(){
+  const isMob=window.matchMedia('(max-width:768px)').matches
+    || /Android|iPhone|iPad|iPod|Mobile/i.test(navigator.userAgent);
+  return isMob ? EXPORT_PAD_MOBILE : EXPORT_PAD_DESKTOP;
+}
+
 // ── Hàm chính: render lá số → trả về Blob PNG ──────────
 async function exportChartToBlob(){
   const wrap  = document.getElementById('banWrap');
@@ -1125,20 +1136,21 @@ async function exportChartToBlob(){
   const banW=wrap.offsetWidth, banH=wrap.offsetHeight;
   const DPR=window.devicePixelRatio||1;
 
-  // 3. Padding an toàn cho mũi tên nhô ra rìa (CSS px)
-  const PAD=56; // đủ cho mũi tên ly tâm dài nhất
-  const cssW=banW+PAD*2;
-  const cssH=banH+PAD*2;
+  // 3. Padding riêng mobile / desktop
+  const pad=getChartExportPad();
+  const pT=pad.top, pR=pad.right, pB=pad.bottom, pL=pad.left;
 
-  // 4. Canvas export = CSS size × DPR — dùng ctx.scale(DPR) → làm việc hoàn toàn trong CSS space
+  const cssW=banW+pL+pR;
+  const cssH=banH+pT+pB;
+
+  // 4. Canvas export: CSS size × DPR, ctx.scale → làm việc trong CSS space
   const exportCanvas=document.createElement('canvas');
   exportCanvas.width =Math.round(cssW*DPR);
   exportCanvas.height=Math.round(cssH*DPR);
   const ctx=exportCanvas.getContext('2d');
-  ctx.scale(DPR,DPR);              // từ đây MỌI tọa độ = CSS px
-  ctx.imageSmoothingEnabled=false; // tắt smoothing → sắc nét
+  ctx.scale(DPR,DPR);
+  ctx.imageSmoothingEnabled=false;
 
-  // Fill nền kem sáng
   ctx.fillStyle=BG;
   ctx.fillRect(0,0,cssW,cssH);
 
@@ -1161,20 +1173,17 @@ async function exportChartToBlob(){
   }
   if(liveSVG) liveSVG.style.display='';
 
-  // Paste boardCanvas vào đúng offset PAD (CSS space)
-  // boardCanvas.width = banW*DPR → ta vẽ ở CSS size (banW × banH), ctx.scale đã nhân DPR
-  ctx.drawImage(boardCanvas, PAD, PAD, banW, banH);
+  // Paste bàn tử vi tại offset (pL, pT)
+  ctx.drawImage(boardCanvas, pL, pT, banW, banH);
 
-  // 6. Serialize SVG mũi tên → vẽ đúng vị trí trong CSS space
+  // 6. SVG mũi tên — viewBox mở rộng đúng theo pad từng cạnh
   const liveSVG2=document.getElementById('banSVG');
   if(liveSVG2){
     await new Promise(resolve=>{
       const ser=new XMLSerializer();
       let s=ser.serializeToString(liveSVG2);
-      // SVG gốc: width=banW, height=banH, tọa độ trong CSS space của banWrap
-      // viewBox mở rộng PAD về 4 phía để bao trọn mũi tên nhô ra ngoài
-      const vbX=-PAD, vbY=-PAD, vbW=banW+PAD*2, vbH=banH+PAD*2;
-      // SVG render ở DPR để đủ pixel
+      // viewBox bao trọn padding 4 cạnh
+      const vbX=-pL, vbY=-pT, vbW=banW+pL+pR, vbH=banH+pT+pB;
       s=s.replace(/\swidth="[^"]*"/,` width="${Math.round(vbW*DPR)}"`)
          .replace(/\sheight="[^"]*"/,` height="${Math.round(vbH*DPR)}"`)
          .replace(/<svg /,`<svg viewBox="${vbX} ${vbY} ${vbW} ${vbH}" `);
@@ -1182,9 +1191,7 @@ async function exportChartToBlob(){
       const url=URL.createObjectURL(b);
       const img=new Image();
       img.onload=()=>{
-        // SVG viewBox từ (-PAD,-PAD) → trong canvas, vẽ tại (PAD-PAD, PAD-PAD) = (0,0)
-        // Nhưng banWrap nằm tại PAD → vẽ SVG tại (0, 0) = đúng (vì viewBox bắt đầu -PAD)
-        // ctx đang trong CSS space → vẽ ở (0,0), size (vbW, vbH)
+        // vbX=-pL, vbY=-pT → vẽ tại (0,0) sẽ khớp với banWrap tại (pL,pT)
         ctx.drawImage(img, 0, 0, vbW, vbH);
         URL.revokeObjectURL(url); resolve();
       };
