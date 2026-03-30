@@ -221,7 +221,7 @@ body{background:var(--bg);color:var(--text);font-family:'Segoe UI',Arial,sans-se
   }
 
   /* ── Sao phụ ── */
-  .sao-phu-wrap{gap:1px !important;padding:0 1px !important;margin-top:1px !important;overflow:hidden !important;}
+  .sao-phu-wrap{gap:1px !important;padding:0 1px !important;margin-top:1px !important;overflow:hidden !important;flex-direction:column !important;align-items:flex-start !important;}
   .sao.phu{
     font-size:5.5px !important;
     gap:1px !important;
@@ -263,9 +263,9 @@ body{background:var(--bg);color:var(--text);font-family:'Segoe UI',Arial,sans-se
 
 /* Sao chính — navy đậm */
 .sao-chinh-wrap{display:flex;flex-direction:column;align-items:center;gap:3px;margin-top:2px;width:100%;}
-.sao-phu-wrap{display:flex;flex-wrap:wrap;gap:2px;justify-content:flex-start;padding:0 2px;margin-top:2px;width:100%;}
+.sao-phu-wrap{display:flex;flex-direction:column;gap:2px;align-items:flex-start;padding:0 2px;margin-top:2px;width:100%;}
 .sao.chinh{font-size:.88rem;font-weight:700;color:var(--navy);display:inline-block;white-space:nowrap;}
-.sao.phu{font-size:.78rem;font-weight:500;color:var(--green);display:inline-flex;align-items:center;gap:2px;white-space:nowrap;}
+.sao.phu{font-size:.78rem;font-weight:500;color:var(--green);display:inline-flex;align-items:center;gap:2px;white-space:nowrap;line-height:1.35;}
 .th{display:inline-flex;align-items:center;justify-content:center;width:22px;height:22px;border-radius:50%;font-size:.76rem;font-weight:900;margin-left:3px;vertical-align:middle;flex-shrink:0;}
 .th-A{background:#1a6b3a;color:#fff;border:2px solid #1a6b3a;}
 .th-B{background:#c0392b;color:#fff;border:2px solid #c0392b;}
@@ -873,9 +873,7 @@ function drawAllArrows(lyTamList,huongTamList){
   const mkW=+(9*mobileScale).toFixed(1), mkH=+(7*mobileScale).toFixed(1);
   ['A','B','C','D'].forEach(k=>{
     const m=document.createElementNS(ns,'marker');
-    m.setAttribute('id',`mk-${k}`);
-    m.setAttribute('markerWidth', mkW);
-    m.setAttribute('markerHeight', mkH);
+    m.setAttribute('id',`mk-${k}`);m.setAttribute('markerWidth','9');m.setAttribute('markerHeight','7');
     m.setAttribute('refX', +(8*mobileScale).toFixed(1));
     m.setAttribute('refY', +(3.5*mobileScale).toFixed(1));
     m.setAttribute('orient','auto');
@@ -888,6 +886,12 @@ function drawAllArrows(lyTamList,huongTamList){
   });
   svg.appendChild(defs);
   wrap.style.position='relative';
+
+  // ── 2 layer trong SVG: đường ở dưới, badge+label luôn trên cùng ──
+  const gArrows=document.createElementNS(ns,'g'); gArrows.id='svgArrows';
+  const gLabels=document.createElementNS(ns,'g'); gLabels.id='svgLabels';
+  svg.appendChild(gArrows);
+  svg.appendChild(gLabels); // gLabels append SAU → luôn nổi trên gArrows
   wrap.appendChild(svg);
 
   // localRect: tọa độ relative to banWrap
@@ -916,14 +920,14 @@ function drawAllArrows(lyTamList,huongTamList){
     const tipX=ex+Math.cos(ang)*HEAD, tipY=ey+Math.sin(ang)*HEAD;
     const h1x=ex-Math.sin(ang)*(HEAD*.65), h1y=ey+Math.cos(ang)*(HEAD*.65);
     const h2x=ex+Math.sin(ang)*(HEAD*.65), h2y=ey-Math.cos(ang)*(HEAD*.65);
+
     const arrow=document.createElementNS(ns,'path');
     arrow.setAttribute('d',`M${tipX},${tipY} L${h1x},${h1y} L${h2x},${h2y} Z`);
     arrow.setAttribute('fill',KY_COLOR[k]);arrow.setAttribute('stroke',KY_COLOR[k]);
     arrow.setAttribute('stroke-width',String(+(1.5*mobileScale).toFixed(1)));
     arrow.setAttribute('stroke-linejoin','round');
     arrow.style.pointerEvents='none';arrow.className='arrow-lytam';
-
-    svg.appendChild(hit);svg.appendChild(line);svg.appendChild(arrow);
+    gArrows.appendChild(hit);gArrows.appendChild(line);gArrows.appendChild(arrow);
 
     if(showLabel){
       const isUp=Math.sin(ang)<-.5,isDown=Math.sin(ang)>.5;
@@ -932,13 +936,21 @@ function drawAllArrows(lyTamList,huongTamList){
       if(isUp){lblX=tipX+lOff;lblY=tipY+6*mobileScale;}
       else if(isDown){lblX=tipX+lOff;lblY=tipY;}
       else{lblX=tipX;lblY=tipY+25*mobileScale;}
+      // Halo trắng phía sau để chữ nổi trên đường
+      const halo=document.createElementNS(ns,'text');
+      halo.setAttribute('x',String(lblX));halo.setAttribute('y',String(lblY));
+      halo.setAttribute('text-anchor','middle');halo.setAttribute('font-size',String(LY_FSIZ));
+      halo.setAttribute('fill','none');halo.setAttribute('stroke','#fff');
+      halo.setAttribute('stroke-width',String(+(3.5*mobileScale).toFixed(1)));
+      halo.setAttribute('stroke-linejoin','round');halo.setAttribute('font-weight','700');
+      halo.style.pointerEvents='none';halo.textContent=k;halo.className='arrow-lytam';
       const txt=document.createElementNS(ns,'text');
       txt.setAttribute('x',String(lblX));txt.setAttribute('y',String(lblY));
       txt.setAttribute('text-anchor','middle');txt.setAttribute('font-size',String(LY_FSIZ));
-      txt.setAttribute('fill',KY_COLOR[k]);txt.setAttribute('font-weight','300');
-      txt.style.filter=`drop-shadow(0 0 ${2*mobileScale}px ${KY_COLOR[k]})`;
+      txt.setAttribute('fill',KY_COLOR[k]);txt.setAttribute('font-weight','700');
       txt.style.pointerEvents='none';txt.textContent=k;txt.className='arrow-lytam';
-      svg.appendChild(txt);
+      gLabels.appendChild(halo);
+      gLabels.appendChild(txt);
     }
   }
 
@@ -978,8 +990,18 @@ function drawAllArrows(lyTamList,huongTamList){
     hitPath.setAttribute('fill','none');hitPath.setAttribute('stroke','transparent');
     hitPath.setAttribute('stroke-width',String(+(14*mobileScale).toFixed(1)));
     hitPath.style.pointerEvents='stroke';
-    [pathEl,hitPath,bc,bt].forEach(el=>g.appendChild(el));
-    svg.appendChild(g); update();
+    // Đường + hit vào gArrows, badge circle+text vào gLabels (luôn trên đường)
+    [pathEl,hitPath].forEach(el=>g.appendChild(el));
+    gArrows.appendChild(g);
+    // Badge (circle + text) append vào gLabels riêng
+    const gBadge=document.createElementNS(ns,'g');
+    gBadge.setAttribute('data-huongtam','1');
+    if(!showArrowsFlag)gBadge.style.display='none';
+    gBadge.appendChild(bc);gBadge.appendChild(bt);
+    gLabels.appendChild(gBadge);
+    // Đồng bộ update: cập nhật cả path trong gArrows và badge trong gLabels
+    function syncBadgeVisibility(){gBadge.style.display=g.style.display;}
+    update();
   }
 
   // Ly tâm
@@ -1017,15 +1039,21 @@ function drawAllArrows(lyTamList,huongTamList){
       else{lax=r.r+AT-4*mobileScale;lay=r.cy+25*mobileScale;}
       const N=dirItems.length,STEP=13*mobileScale;
       dirItems.forEach((item,i)=>{
+        const lx2=lax+(i-(N-1)/2)*STEP, ly2=lay+6*mobileScale;
+        const halo=document.createElementNS(ns,'text');
+        halo.setAttribute('x',String(lx2));halo.setAttribute('y',String(ly2));
+        halo.setAttribute('text-anchor','middle');halo.setAttribute('font-size',String(LY_FSIZ));
+        halo.setAttribute('fill','none');halo.setAttribute('stroke','#fff');
+        halo.setAttribute('stroke-width',String(+(3.5*mobileScale).toFixed(1)));
+        halo.setAttribute('stroke-linejoin','round');halo.setAttribute('font-weight','700');
+        halo.style.pointerEvents='none';halo.textContent=item.ky;halo.className='arrow-lytam';
         const lbl=document.createElementNS(ns,'text');
-        lbl.setAttribute('x',String(lax+(i-(N-1)/2)*STEP));
-        lbl.setAttribute('y',String(lay+6*mobileScale));
-        lbl.setAttribute('text-anchor','middle');
-        lbl.setAttribute('font-size',String(LY_FSIZ));
-        lbl.setAttribute('fill',KY_COLOR[item.ky]);lbl.setAttribute('font-weight','300');
-        lbl.style.filter=`drop-shadow(0 0 ${2*mobileScale}px ${KY_COLOR[item.ky]})`;
+        lbl.setAttribute('x',String(lx2));lbl.setAttribute('y',String(ly2));
+        lbl.setAttribute('text-anchor','middle');lbl.setAttribute('font-size',String(LY_FSIZ));
+        lbl.setAttribute('fill',KY_COLOR[item.ky]);lbl.setAttribute('font-weight','700');
         lbl.style.pointerEvents='none';lbl.textContent=item.ky;lbl.className='arrow-lytam';
-        svg.appendChild(lbl);
+        gLabels.appendChild(halo);
+        gLabels.appendChild(lbl);
       });
     });
   });
