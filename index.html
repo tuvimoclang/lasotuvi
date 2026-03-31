@@ -473,6 +473,62 @@
     font-size: 12px; color: var(--text-3);
     text-align: center; margin-top: 10px;
   }
+
+  /* ── THIRD-PARTY BROWSER WARNING ───────────────────────────
+     Chỉ hiện trên mobile phone khi mở từ in-app browser.
+     Desktop / tablet lớn luôn ẩn qua media query.
+  ─────────────────────────────────────────────────────────── */
+  .tpb-warning {
+    display: none; /* ẩn mặc định; JS sẽ thêm .tpb-visible để hiện */
+    position: fixed;
+    left: 50%;
+    transform: translateX(-50%);
+    bottom: 104px; /* đủ cao để không đè lên .float-chat (bottom 24px + ~60px nút) */
+    z-index: 1500;
+    width: calc(100% - 32px);
+    max-width: 420px;
+    background: #fff8f0;
+    border: 1.5px solid rgba(181,101,29,0.35);
+    border-radius: 16px;
+    padding: 16px 16px 14px;
+    box-shadow: 0 8px 32px rgba(61,43,26,0.18), 0 2px 8px rgba(61,43,26,0.10);
+    font-family: 'Segoe UI', 'Helvetica Neue', Arial, sans-serif;
+    animation: tpb-slidein 0.32s cubic-bezier(0.22,1,0.36,1);
+  }
+  @keyframes tpb-slidein {
+    from { opacity:0; transform:translateX(-50%) translateY(18px); }
+    to   { opacity:1; transform:translateX(-50%) translateY(0); }
+  }
+  /* Desktop / tablet lớn: luôn ẩn dù JS có lỗi */
+  @media (min-width: 769px) { .tpb-warning { display: none !important; } }
+
+  .tpb-warning.tpb-visible { display: block; }
+
+  .tpb-header {
+    display: flex; align-items: flex-start;
+    justify-content: space-between; gap: 10px; margin-bottom: 10px;
+  }
+  .tpb-icon-title { display: flex; align-items: center; gap: 8px; }
+  .tpb-icon { font-size: 20px; flex-shrink: 0; line-height: 1; }
+  .tpb-title { font-size: 13.5px; font-weight: 700; color: #8B4513; line-height: 1.35; }
+  .tpb-close {
+    background: none; border: none; cursor: pointer;
+    font-size: 20px; color: #9B7B5A; line-height: 1;
+    padding: 0 2px; flex-shrink: 0; transition: color 0.15s;
+  }
+  .tpb-close:hover { color: #8B4513; }
+  .tpb-copy-btn {
+    display: block; width: 100%;
+    padding: 10px 14px;
+    background: linear-gradient(135deg, #B5651D, #8B4513);
+    color: #fff; font-family: inherit; font-size: 14px; font-weight: 700;
+    border: none; border-radius: 10px; cursor: pointer;
+    text-align: center; transition: opacity 0.15s, transform 0.1s;
+    margin-bottom: 9px; letter-spacing: 0.2px;
+  }
+  .tpb-copy-btn:active { opacity: 0.88; transform: scale(0.98); }
+  .tpb-copy-btn.tpb-copied { background: linear-gradient(135deg, #2d8a4e, #1e6b3a); }
+  .tpb-msg { font-size: 11.5px; color: #6B4E31; line-height: 1.5; text-align: center; }
 </style>
 </head>
 <body>
@@ -834,6 +890,154 @@ document.getElementById('modalOverlay').addEventListener('click', function(e) {
 document.addEventListener('keydown', function(e) {
   if (e.key === 'Escape') closeModal();
 });
+</script>
+
+<!-- ── THIRD-PARTY BROWSER WARNING BLOCK ──────────────────────
+     Hiện khi phát hiện mobile + in-app browser (Zalo, FB, IG, TikTok...).
+     Android: nút "Mở bằng trình duyệt" dùng Intent URL.
+     iOS: fallback "Copy Link" vì Apple không cho mở Safari từ webview.
+─────────────────────────────────────────────────────────────── -->
+<div class="tpb-warning" id="tpbWarning" role="alert" aria-live="polite">
+  <div class="tpb-header">
+    <div class="tpb-icon-title">
+      <span class="tpb-icon">🌐</span>
+      <span class="tpb-title">Mở bằng trình duyệt để dùng đầy đủ</span>
+    </div>
+    <button class="tpb-close" id="tpbClose" aria-label="Đóng">×</button>
+  </div>
+  <!-- Text và hành vi nút sẽ được JS set tuỳ Android / iOS -->
+  <button class="tpb-copy-btn" id="tpbActionBtn">🌐 Mở bằng trình duyệt</button>
+  <p class="tpb-msg" id="tpbMsg">
+    Không thể save hình ảnh nếu bấm link từ bên thứ 3. Hãy mở bằng trình duyệt để dùng đầy đủ chức năng.
+  </p>
+</div>
+
+<script>
+/* ── THIRD-PARTY BROWSER DETECTION & WARNING LOGIC ─────────────
+   Chỉ hiện banner khi: (1) là mobile phone + (2) in-app browser.
+   Android → Intent URL để mở Chrome/browser mặc định trực tiếp.
+   iOS     → copy link (Apple không cho phép mở Safari từ webview).
+   sessionStorage lưu trạng thái đóng để không hiện lại trong phiên.
+──────────────────────────────────────────────────────────────── */
+(function () {
+  'use strict';
+
+  var ua = navigator.userAgent || '';
+
+  // 1. Kiểm tra thiết bị có phải mobile phone không
+  function isMobilePhone() {
+    if (/Windows NT|Macintosh|Linux x86_64/.test(ua) && !/Android/.test(ua)) return false;
+    if (window.innerWidth >= 769) return false;
+    return /Android|iPhone|iPod|Mobile|BlackBerry|IEMobile|Opera Mini/i.test(ua);
+  }
+
+  // 2. Kiểm tra có phải in-app browser / webview không
+  function isInAppBrowser() {
+    var patterns = [
+      /FBAN/i, /FBAV/i, /FB_IAB/i, /Instagram/i, /Messenger/i,
+      /Line\//i, /KAKAOTALK/i, /Zalo/i, /TelegramBot/i,
+      /TikTok/i, /BytedanceWebview/i, /Twitter/i, /LinkedInApp/i,
+      /Pinterest/i, /Snapchat/i, /MicroMessenger/i, /GSA\//i,
+    ];
+    for (var i = 0; i < patterns.length; i++) {
+      if (patterns[i].test(ua)) return true;
+    }
+    // Android WebView
+    if (/Android/.test(ua) && /wv\b/.test(ua)) return true;
+    if (/Android/.test(ua) && /Version\/\d/.test(ua) && /Chrome\/\d/.test(ua)) return true;
+    // iOS WebView: có AppleWebKit nhưng thiếu Safari/, CriOS/, FxiOS/, EdgiOS/
+    if (/iPhone|iPod/.test(ua) && /AppleWebKit/.test(ua)) {
+      if (!/Safari\//.test(ua) && !/CriOS\//.test(ua) && !/FxiOS\//.test(ua) && !/EdgiOS\//.test(ua)) return true;
+    }
+    return false;
+  }
+
+  // 3a. Mở bằng trình duyệt ngoài — Android Intent URL
+  function openInBrowser() {
+    var url = window.location.href;
+    // Intent URL: yêu cầu Android mở link bằng trình duyệt mặc định
+    // package để trống → hệ thống chọn trình duyệt phù hợp
+    var intentUrl = 'intent://' + url.replace(/^https?:\/\//, '') +
+      '#Intent;scheme=' + (url.startsWith('https') ? 'https' : 'http') +
+      ';action=android.intent.action.VIEW' +
+      ';category=android.intent.category.BROWSABLE' +
+      ';end';
+    // Thử mở bằng window.open trước (một số app cho phép)
+    var w = window.open(url, '_blank');
+    if (!w || w.closed || typeof w.closed === 'undefined') {
+      // Fallback: dùng Intent URL
+      window.location.href = intentUrl;
+    }
+  }
+
+  // 3b. Copy link với fallback — dùng cho iOS
+  function copyLink(btn) {
+    var url = window.location.href;
+    function onSuccess() {
+      btn.textContent = '✅ Đã copy link';
+      btn.classList.add('tpb-copied');
+      setTimeout(function () {
+        btn.textContent = '📋 Copy Link';
+        btn.classList.remove('tpb-copied');
+      }, 2000);
+    }
+    function onFail() {
+      var ta = document.createElement('textarea');
+      ta.value = url;
+      ta.style.cssText = 'position:fixed;top:-9999px;left:-9999px;opacity:0;';
+      document.body.appendChild(ta);
+      ta.focus(); ta.select();
+      try { document.execCommand('copy'); onSuccess(); }
+      catch (e) { alert('Hãy copy link thủ công: ' + url); }
+      document.body.removeChild(ta);
+    }
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(url).then(onSuccess, onFail);
+    } else { onFail(); }
+  }
+
+  // 4. Khởi tạo banner
+  function initWarning() {
+    if (sessionStorage.getItem('tpb_dismissed') === '1') return;
+    if (!isMobilePhone() || !isInAppBrowser()) return;
+
+    var banner    = document.getElementById('tpbWarning');
+    var closeBtn  = document.getElementById('tpbClose');
+    var actionBtn = document.getElementById('tpbActionBtn');
+    var msgEl     = document.getElementById('tpbMsg');
+    if (!banner) return;
+
+    var isAndroid = /Android/.test(ua);
+    var isIOS     = /iPhone|iPod/.test(ua);
+
+    if (isAndroid) {
+      // Android: có thể mở trình duyệt ngoài bằng Intent
+      actionBtn.textContent = '🌐 Mở bằng trình duyệt';
+      msgEl.textContent = 'Bấm nút trên để mở trang bằng trình duyệt và dùng đầy đủ chức năng (bao gồm lưu ảnh lá số).';
+      actionBtn.addEventListener('click', openInBrowser);
+    } else {
+      // iOS / thiết bị khác: Apple không cho mở Safari từ webview → copy link
+      actionBtn.textContent = '📋 Copy Link';
+      msgEl.textContent = 'Không thể save hình ảnh khi mở từ app bên thứ 3. Hãy copy link và dán vào Safari hoặc Chrome để dùng đầy đủ chức năng.';
+      actionBtn.addEventListener('click', function () { copyLink(actionBtn); });
+    }
+
+    // Hiện banner
+    banner.classList.add('tpb-visible');
+
+    // Nút đóng
+    closeBtn.addEventListener('click', function () {
+      banner.classList.remove('tpb-visible');
+      sessionStorage.setItem('tpb_dismissed', '1');
+    });
+  }
+
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', initWarning);
+  } else {
+    initWarning();
+  }
+})();
 </script>
 
 </body>
