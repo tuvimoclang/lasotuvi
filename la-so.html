@@ -184,8 +184,11 @@ body{background:var(--bg);color:var(--text);font-family:'Segoe UI',Arial,sans-se
 .show-ln .ln-label{display:block !important;}
 
 /* Tên cung lưu niên — góc dưới trái — mặc định ẨN, bật bằng nút */
-.ln-chuc{display:none;position:absolute;bottom:3px;left:5px;font-size:.65rem;font-weight:700;color:var(--green);text-align:left;line-height:1.4;z-index:3;pointer-events:none;}
-.ln-chuc.show{display:block;}
+.ln-chuc{display:none;position:absolute;bottom:3px;left:5px;font-size:.65rem;font-weight:700;color:var(--green);text-align:left;line-height:1.4;z-index:3;pointer-events:none;flex-direction:column;}
+.ln-chuc.show{display:flex;}
+/* Dòng Tháng: nằm trên tên LN, canh trái tuyệt đối */
+.ln-thang{display:none;position:absolute;bottom:18px;left:5px;font-size:.65rem;font-weight:900;color:#ff8c00;text-align:left;white-space:nowrap;z-index:3;pointer-events:none;line-height:1.4;}
+.ln-thang.show{display:block;}
 
 /* ĐẠI HẠN TABLE */
 .daihan-wrap{background:var(--surface);border:1px solid var(--border-lt);border-radius:12px;padding:18px;margin-top:0;box-shadow:0 2px 8px rgba(139,69,19,.05);}
@@ -797,6 +800,9 @@ function toggleLuuNien(){
   document.getElementById('btnLuuNien').textContent=luuNienMode?'📅 Ẩn lưu niên':'📅 Hiện lưu niên';
   document.getElementById('btnLuuNien').classList.toggle('active',luuNienMode);
   document.querySelectorAll('.ln-chuc').forEach(el=>{
+    el.style.display=luuNienMode?'flex':'none';
+  });
+  document.querySelectorAll('.ln-thang').forEach(el=>{
     el.style.display=luuNienMode?'block':'none';
   });
 }
@@ -862,16 +868,29 @@ function drawAllArrows(lyTamList,huongTamList,scaleFactor){
   // SVG đặt trong ban-wrap (cùng transform space), KHÔNG phải ban-outer.
   // Lợi ích: SVG bị scale(f) cùng wrap → mũi tên tự ngắn theo chart.
   // localRect tính relative to wrap → tọa độ chính xác.
-  // SVG overflow:visible để mũi tên ly tâm nhô ra ngoài wrap một chút.
+  //
+  // ── FIX MŨI TÊN BỊ CẮT KHI SERIALIZE ──
+  // overflow:visible chỉ giúp hiển thị; khi XMLSerializer render SVG để drawImage,
+  // phần nhô ra ngoài width/height của SVG bị cắt mất.
+  // Fix: dùng viewBox mở rộng EXTRA px về 4 phía, đặt SVG lùi -EXTRA px,
+  // sao cho tọa độ nội dung vẫn giữ nguyên (localRect không đổi),
+  // nhưng toàn bộ vùng overflow đã được capture vào viewBox.
+  // saveLaSo sẽ đọc data-extra để bù offset khi drawImage.
+  // EXTRA: vùng buffer để capture mũi tên ly tâm nhô ra ngoài wrap khi serialize.
+  // SVG display bình thường: top:0, left:0, width=naturalW, height=naturalH (pointer-events đúng).
+  // Khi saveLaSo serialize, sẽ tạo bản sao SVG với viewBox mở rộng EXTRA về 4 phía.
+  const EXTRA = Math.ceil(ARROW_LY_TAM_LENGTH + ARROW_LY_TAM_HEAD + ARROW_LY_TAM_AT + 20);
   const naturalW=wrap.offsetWidth, naturalH=wrap.offsetHeight;
   const ns='http://www.w3.org/2000/svg';
   const svg=document.createElementNS(ns,'svg');
   svg.id='banSVG';
-  svg.setAttribute('width',naturalW);svg.setAttribute('height',naturalH);
+  svg.setAttribute('width', naturalW);
+  svg.setAttribute('height', naturalH);
+  // viewBox bình thường — không offset; overflow:visible để mũi tên nhô ra hiển thị
+  svg.setAttribute('viewBox',`0 0 ${naturalW} ${naturalH}`);
+  svg.dataset.extra = String(EXTRA);  // saveLaSo đọc để tạo bản sao mở rộng khi serialize
   svg.style.cssText='position:absolute;top:0;left:0;width:100%;height:100%;overflow:visible;pointer-events:none;z-index:40;';
-  const defs=document.createElementNS(ns,'defs');
-  ['A','B','C','D'].forEach(k=>{const m=document.createElementNS(ns,'marker');m.setAttribute('id',`mk-${k}`);m.setAttribute('markerWidth','9');m.setAttribute('markerHeight','7');m.setAttribute('refX','8');m.setAttribute('refY','3.5');m.setAttribute('orient','auto');const p=document.createElementNS(ns,'path');p.setAttribute('d','M0,0 L9,3.5 L0,7 Z');p.setAttribute('fill',KY_COLOR[k]);m.appendChild(p);defs.appendChild(m);});
-  svg.appendChild(defs);
+  // Không cần <defs> marker vì arrowhead hướng tâm đã dùng <path> inline (serialize-safe)
 
   // ── HAI LAYER GROUP: mũi tên dưới, label trên ──
   const arrowLayer=document.createElementNS(ns,'g');arrowLayer.id='svg-arrow-layer';
@@ -910,6 +929,16 @@ function drawAllArrows(lyTamList,huongTamList,scaleFactor){
     const g=document.createElementNS(ns,'g');g.setAttribute('data-huongtam','1');if(!showArrowsFlag)g.style.display='none';
     const pathEl=document.createElementNS(ns,'path');
     const hitPath=document.createElementNS(ns,'path');
+    // ── ARROWHEAD thủ công (thay marker-end) ──
+    // marker-end:url(#id) bị broken khi SVG serialize sang blob URL vì
+    // browser không resolve fragment #id cross-document → mũi tên biến mất.
+    // Dùng <path> tam giác tính từ tangent tại điểm cuối — giống addLyTamArrow.
+    const arrowHead=document.createElementNS(ns,'path');
+    arrowHead.setAttribute('fill',KY_COLOR[k]);
+    arrowHead.setAttribute('stroke',KY_COLOR[k]);
+    arrowHead.setAttribute('stroke-width','1');
+    arrowHead.setAttribute('stroke-linejoin','round');
+    arrowHead.style.pointerEvents='none';
     const bc=document.createElementNS(ns,'circle');
     bc.setAttribute('r',String(BRAD));bc.setAttribute('fill',KY_COLOR[k]);
     bc.setAttribute('stroke','none');
@@ -921,16 +950,24 @@ function drawAllArrows(lyTamList,huongTamList,scaleFactor){
     bt.setAttribute('font-weight','900');bt.textContent=k;bt.style.pointerEvents='none';
 
     function update(){
+      // Hướng đường cong tại điểm cuối: từ control point → p2
       const ang=Math.atan2(st.p2y-st.cy,st.p2x-st.cx);
-      // Đường dừng trước đầu nhọn 6px
-      const ex=st.p2x-Math.cos(ang)*6, ey=st.p2y-Math.sin(ang)*6;
+      const HEAD=Math.max(8,12*f); // kích thước đầu mũi tên hướng tâm
+      // Đường dừng trước đầu nhọn HEAD px để nhường chỗ cho tam giác
+      const ex=st.p2x-Math.cos(ang)*HEAD, ey=st.p2y-Math.sin(ang)*HEAD;
       const d=`M ${st.p1x} ${st.p1y} Q ${st.cx} ${st.cy} ${ex} ${ey}`;
       pathEl.setAttribute('d',d); hitPath.setAttribute('d',d);
+
+      // Vẽ đầu mũi tên tam giác tại p2 theo hướng ang
+      const tipX=st.p2x, tipY=st.p2y;
+      const h1x=ex-Math.sin(ang)*(HEAD*.6), h1y=ey+Math.cos(ang)*(HEAD*.6);
+      const h2x=ex+Math.sin(ang)*(HEAD*.6), h2y=ey-Math.cos(ang)*(HEAD*.6);
+      arrowHead.setAttribute('d',`M${tipX},${tipY} L${h1x},${h1y} L${h2x},${h2y} Z`);
 
       // Tính hướng từ p1→p2 (vector dọc đường)
       const dx=st.p2x-st.p1x, dy=st.p2y-st.p1y;
       const len=Math.sqrt(dx*dx+dy*dy)||1;
-      const ux=dx/len, uy=dy/len; // unit vector p1→p2
+      const ux=dx/len, uy=dy/len;
 
       // Badge nằm trên đường, lùi từ p2 về p1 đúng badgeDist px
       const bx=st.p2x - ux*badgeDist;
@@ -941,15 +978,15 @@ function drawAllArrows(lyTamList,huongTamList,scaleFactor){
     }
 
     pathEl.setAttribute('fill','none');pathEl.setAttribute('stroke',KY_COLOR[k]);
-    pathEl.setAttribute('stroke-width','2');pathEl.setAttribute('marker-end',`url(#mk-${k})`);
+    pathEl.setAttribute('stroke-width','2');
+    // KHÔNG dùng marker-end — dùng arrowHead <path> thay thế (serialize-safe)
     pathEl.setAttribute('opacity','.9');pathEl.style.pointerEvents='none';
     hitPath.setAttribute('fill','none');hitPath.setAttribute('stroke','transparent');
     hitPath.setAttribute('stroke-width','14');hitPath.style.pointerEvents='stroke';
-    // Đường và hit area → arrowLayer (dưới)
-    [pathEl,hitPath].forEach(el=>g.appendChild(el));
+    // Đường + hit area + arrowHead → arrowLayer
+    [pathEl,hitPath,arrowHead].forEach(el=>g.appendChild(el));
     arrowLayer.appendChild(g);
-    // Badge (halo + circle + text) → labelLayer (trên cùng)
-    // Dùng <g> riêng để toggle cùng showArrowsFlag
+    // Badge → labelLayer
     const bGroup=document.createElementNS(ns,'g');bGroup.setAttribute('data-huongtam','1');
     if(!showArrowsFlag)bGroup.style.display='none';
     [bc2,bc,bt].forEach(el=>bGroup.appendChild(el));
@@ -1040,7 +1077,8 @@ async function saveLaSo(){
   // Vẽ lại mũi tên ở layout gốc (chưa scale)
   equalizeCungHeights();
   Object.keys(arrowCPs).forEach(k=>delete arrowCPs[k]);
-  if(_cachedArrowData) drawAllArrows(_cachedArrowData.lyTamList,_cachedArrowData.huongTamList,window._chartScaleFactor);
+  // scaleFactor=1 vì wrap đã reset về full desktop size (transform đã xóa)
+  if(_cachedArrowData) drawAllArrows(_cachedArrowData.lyTamList,_cachedArrowData.huongTamList,1);
   await new Promise(r=>setTimeout(r,350));
 
   const bg='#fdf6e3';
@@ -1078,16 +1116,42 @@ async function saveLaSo(){
   const liveSVG2=document.getElementById('banSVG');
   if(!liveSVG2){restoreScale();finish(out);return;}
 
+  // ── SERIALIZE SVG với viewBox mở rộng EXTRA về 4 phía ──
+  // Mục đích: mũi tên ly tâm nhô ra ngoài wrap (overflow:visible khi display)
+  // bị CẮT khi XMLSerializer chỉ capture trong width×height của SVG gốc.
+  // Fix: clone SVG, mở rộng width/height/viewBox thêm EXTRA về 4 phía → không bị cắt.
+  // Live SVG giữ nguyên top:0;left:0 → pointer-events hiển thị đúng.
+  const svgExtra = parseInt(liveSVG2.dataset.extra||'0');
+  const svgW = parseInt(liveSVG2.getAttribute('width')||'0');
+  const svgH = parseInt(liveSVG2.getAttribute('height')||'0');
+
+  // Clone và mở rộng viewBox để capture overflow
+  const svgClone = liveSVG2.cloneNode(true);
+  svgClone.setAttribute('width',  svgW + svgExtra*2);
+  svgClone.setAttribute('height', svgH + svgExtra*2);
+  svgClone.setAttribute('viewBox',`-${svgExtra} -${svgExtra} ${svgW+svgExtra*2} ${svgH+svgExtra*2}`);
   const ser=new XMLSerializer();
-  const svgStr=ser.serializeToString(liveSVG2);
-  // SVG giờ nằm trong ban-wrap; outer chứa wrap với padding desktop.
-  // Vẽ SVG overlay lên toàn bộ canvas theo kích thước outer.
-  const OW=outer.offsetWidth, OH=outer.offsetHeight;
+  const svgStr=ser.serializeToString(svgClone);
+
+  // FIX offset: SVG nằm trong wrap (không phải outer) → vẽ tại đúng offset wrap trong outer
+  const wrapLeft = wrap ? wrap.offsetLeft : 0;
+  const wrapTop  = wrap ? wrap.offsetTop  : 0;
+  const wrapW    = wrap ? wrap.offsetWidth  : outer.offsetWidth;
+  const wrapH    = wrap ? wrap.offsetHeight : outer.offsetHeight;
+
   const blob2=new Blob([svgStr],{type:'image/svg+xml;charset=utf-8'});
   const url=URL.createObjectURL(blob2);
   const img=new Image();
   img.onload=()=>{
-    ctx.drawImage(img,0,0,OW*SCALE,OH*SCALE);
+    // Vẽ SVG: origin dịch lùi svgExtra (vì viewBox bắt đầu từ -svgExtra),
+    // size = (wrapW + svgExtra*2) × SCALE để bao phủ toàn bộ vùng mở rộng
+    ctx.drawImage(
+      img,
+      (wrapLeft - svgExtra) * SCALE,
+      (wrapTop  - svgExtra) * SCALE,
+      (wrapW + svgExtra*2)  * SCALE,
+      (wrapH + svgExtra*2)  * SCALE
+    );
     URL.revokeObjectURL(url);
     restoreScale();
     finish(out);
@@ -1278,7 +1342,8 @@ function render(d){
         </div>
         <div class="sao-chinh-wrap">${chinhHtml}</div>
         ${phuHtml?`<div class="${phuWrapClass}">${phuHtml}</div>`:''}
-        <div class="ln-chuc" style="display:none">${lnThang?`<span style="color:#ff8c00;font-weight:900">${lnThang}</span> · `:''}<span>${lnCungTen}</span></div>
+        ${lnThang?`<div class="ln-thang" style="display:none">${lnThang}</div>`:''}
+        <div class="ln-chuc" style="display:none"><span>${lnCungTen}</span></div>
         <div class="cung-bottom">
           ${dvCucTen?`<span class="dv-chuc">${dvCucTen} ĐV</span>`:''}
           ${lnTuoi?`<span class="ln-label">${lnTuoi}</span>`:''}
@@ -1289,6 +1354,9 @@ function render(d){
   document.getElementById('banTuvi').innerHTML=banHtml;
   // Áp lại trạng thái lưu niên sau khi render mới
   document.querySelectorAll('.ln-chuc').forEach(el=>{
+    el.style.display=luuNienMode?'flex':'none';
+  });
+  document.querySelectorAll('.ln-thang').forEach(el=>{
     el.style.display=luuNienMode?'block':'none';
   });
 
