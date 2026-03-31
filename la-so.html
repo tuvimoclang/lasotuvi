@@ -66,12 +66,13 @@ const TuViEngine = (() => {
   --terra:#B5651D;
 }
 *{box-sizing:border-box;margin:0;padding:0;}
-body{background:var(--bg);color:var(--text);font-family:'Segoe UI',Arial,sans-serif;min-height:100vh;}
+html{-webkit-text-size-adjust:100%;text-size-adjust:100%;}
+body{background:var(--bg);color:var(--text);font-family:'Segoe UI',Arial,sans-serif;min-height:100vh;overflow-x:hidden;}
 .header{background:var(--bg2);border-bottom:2px solid var(--border);padding:14px 20px;display:flex;align-items:center;gap:14px;}
 .btn-back{display:inline-flex;align-items:center;gap:6px;color:var(--terra);font-size:13px;font-weight:700;text-decoration:none;padding:7px 16px;background:var(--bg);border:1px solid var(--terra);border-radius:50px;transition:background .2s;}
 .btn-back:hover{background:var(--bg3);}
 .header-title{flex:1;text-align:center;font-size:18px;font-weight:700;color:var(--text);}
-.page{max-width:960px;margin:0 auto;padding:28px 18px 60px;}
+.page{max-width:960px;margin:0 auto;padding:28px 18px 60px;overflow-x:hidden;}
 
 /* FORM */
 .form-card{background:var(--surface);border:1px solid var(--border-lt);border-radius:16px;padding:26px;margin-bottom:28px;box-shadow:0 2px 12px rgba(139,69,19,.07);}
@@ -101,7 +102,7 @@ body{background:var(--bg);color:var(--text);font-family:'Segoe UI',Arial,sans-se
 .err-box.show{display:block;}
 
 /* RESULT */
-#result{display:none;}
+#result{display:none;max-width:100%;overflow-x:hidden;}
 #result.show{display:block;}
 .info-bar,.info-bar2{display:grid;grid-template-columns:repeat(4,1fr);gap:6px 16px;background:var(--bg2);border:1px solid var(--border-lt);padding:10px 16px;border-radius:8px 8px 0 0;}
 .info-bar2{border-top:none;border-radius:0 0 8px 8px;margin-bottom:12px;}
@@ -117,26 +118,49 @@ body{background:var(--bg);color:var(--text);font-family:'Segoe UI',Arial,sans-se
 .btn-act.primary:hover{background:#8B4513;}
 
 /* BÀN TỬ VI */
-.ban-outer{width:100%;overflow:visible;padding:62px 72px;}
+.ban-outer{width:100%;overflow:visible;padding:62px 72px;position:relative;}
+/* ban-wrap: width 100% bình thường; JS tạm set max-content khi đo scale */
 .ban-wrap{position:relative;overflow:visible;}
-.ban-tuvi{display:grid;grid-template-columns:repeat(4,1fr);gap:0;border:3px solid var(--border);background:var(--border);border-radius:3px;}
+/* ban-tuvi: min-width đảm bảo 4 cột không co quá mức khi đo max-content */
+.ban-tuvi{display:grid;grid-template-columns:repeat(4,minmax(120px,1fr));gap:0;border:3px solid var(--border);background:var(--border);border-radius:3px;}
 #banSVG{position:absolute;overflow:visible;pointer-events:none;z-index:40;}
 
-.cung{background:var(--bg);padding:5px 5px 38px 5px;min-height:145px;position:relative;border:1px solid #8B451366;display:flex;flex-direction:column;align-items:stretch;cursor:pointer;}
+.cung{background:var(--bg);padding:0 0 38px 0;min-height:145px;position:relative;border:1px solid #8B451366;display:flex;flex-direction:column;align-items:stretch;cursor:pointer;}
 .cung:hover{background:#fdf0d0;}
 
-/* Tên cung — đỏ in hoa */
-.cung-chuc{width:100%;text-align:center;font-size:.80rem;font-weight:900;letter-spacing:.5px;text-transform:uppercase;color:var(--red);padding:2px 2px 4px;border-bottom:1px solid #8B451333;margin-bottom:3px;flex-shrink:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
-
-/* Can chi — góc phải trên, đỏ */
-.cung-cc{position:absolute;top:4px;right:5px;font-size:.70rem;color:var(--red);font-weight:700;line-height:1.3;text-align:right;z-index:2;}
-
-/* Số tuổi đại hạn — góc trái trên, đỏ */
-.cung-dv{position:absolute;top:4px;left:5px;font-size:.78rem;color:var(--red);font-weight:900;z-index:2;}
+/* ── CUNG HEADER — dùng grid 3 cột: [số ĐV] [tên cung] [can cung]
+   Không còn position:absolute → không bao giờ chồng nhau ── */
+.cung-header{
+  display:grid;
+  grid-template-columns:auto 1fr auto;
+  align-items:baseline;
+  gap:0 3px;
+  width:100%;
+  padding:2px 4px 3px;
+  border-bottom:1px solid #8B451333;
+  margin-bottom:3px;
+  flex-shrink:0;
+}
+.cung-dv{
+  font-size:.78rem;color:var(--red);font-weight:900;
+  white-space:nowrap;line-height:1.2;
+  /* không còn absolute */
+}
+.cung-chuc{
+  text-align:center;font-size:.78rem;font-weight:900;
+  letter-spacing:.3px;text-transform:uppercase;color:var(--red);
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
+  line-height:1.2;padding:0;border:none;margin:0;width:auto;
+}
+.cung-cc{
+  font-size:.68rem;color:var(--red);font-weight:700;
+  white-space:nowrap;text-align:right;line-height:1.2;
+  /* không còn absolute */
+}
 
 /* Sao chính — navy đậm */
-.sao-chinh-wrap{display:flex;flex-direction:column;align-items:center;gap:3px;margin-top:2px;width:100%;}
-.sao-phu-wrap{display:flex;flex-direction:column;gap:2px;align-items:flex-start;padding:0 2px;margin-top:2px;width:100%;}
+.sao-chinh-wrap{display:flex;flex-direction:column;align-items:center;gap:3px;margin-top:2px;width:100%;padding:0 4px;}
+.sao-phu-wrap{display:flex;flex-direction:column;gap:2px;align-items:flex-start;padding:0 4px;margin-top:2px;width:100%;}
 .sao.chinh{font-size:.88rem;font-weight:700;color:var(--navy);display:inline-block;white-space:nowrap;}
 .sao.phu{font-size:.78rem;font-weight:500;color:var(--green);display:inline-flex;align-items:center;gap:2px;white-space:nowrap;}
 .th{display:inline-flex;align-items:center;justify-content:center;width:22px;height:22px;border-radius:50%;font-size:.76rem;font-weight:900;margin-left:3px;vertical-align:middle;flex-shrink:0;}
@@ -183,130 +207,115 @@ body{background:var(--bg);color:var(--text);font-family:'Segoe UI',Arial,sans-se
 @keyframes sp{to{transform:rotate(360deg);}}
 @media print{.header,.form-card,.action-row,.daihan-wrap{display:none !important;}#result.show{display:block !important;}.ban-outer{padding:40px;}}
 
-/* ══════════════════════════════════════════════
-   MOBILE FIXES — viền mảnh + can cung không bị cắt
-   ══════════════════════════════════════════════ */
-@media (max-width: 768px) {
-  /* Viền lá số mảnh hơn */
-  .ban-tuvi {
-    border-width: 2px !important;
-    border-radius: 2px !important;
+/* ══════════════════════════════════════════════════════════
+   MOBILE SCALE — transform:scale(f) trên .ban-wrap
+   f = vw × CHART_FIT_RATIO / naturalW  (khoảng 0.40–0.68 trên phone)
+   → chart chiếm ~68% viewport, 32% còn lại = đệm + không gian mũi tên
+   ══════════════════════════════════════════════════════════ */
+
+/* Chặn scroll ngang toàn trang trên mobile */
+@media (max-width: 900px) {
+  html, body { overflow-x: hidden; }
+  .page { padding-left: 6px !important; padding-right: 6px !important; }
+
+  /* 1. ẨN BẢNG ĐẠI HẠN */
+  .daihan-wrap { display: none !important; }
+
+  /* 2. NỀN TRẮNG XUNG QUANH CHART — bọc #result trong màu sáng */
+  #result.show {
+    background: #ffffff;
+    border-radius: 12px;
+    padding: 10px 6px 14px !important;
   }
-  /* Viền từng cung mảnh hơn */
-  .cung {
-    border-width: 1px !important;
-    /* Đảm bảo overflow visible để .cung-cc không bị clip */
+  /* Info bar và badges cũng cần background hợp */
+  .info-bar, .info-bar2 { background: var(--bg2) !important; }
+
+  /* 3. KHOẢNG CÁCH chart cách nút phía trên + nền trắng */
+  .ban-outer {
+    margin-top: 14px !important;
+    padding: 0 !important;
+    overflow: hidden !important;
+    display: flex !important;
+    justify-content: center !important;
+    align-items: flex-start !important;
+    background: #ffffff;
+    border-radius: 8px;
+  }
+
+  /* ban-wrap: transform-origin top center */
+  .ban-wrap {
+    transform-origin: top center !important;
+    flex-shrink: 0;
+  }
+
+  /* ── HEADER CUNG: gọn, mảnh, nhẹ ── */
+  .cung-header {
+    padding: 1px 3px 2px !important;
+    gap: 0 2px !important;
+  }
+  .cung-dv {
+    font-size: .70rem !important;
+    line-height: 1.1 !important;
+  }
+  .cung-chuc {
+    font-size: .58rem !important;
+    letter-spacing: 0 !important;
+    font-weight: 700 !important;
+    line-height: 1.1 !important;
+  }
+  .cung-cc {
+    font-size: .54rem !important;
+    line-height: 1.1 !important;
+  }
+
+  /* ── SAO CHÍNH NHỎ HƠN ── */
+  .sao.chinh { font-size: .78rem !important; font-weight: 700 !important; }
+
+  /* ── PHỤ TINH: 2 CỘT KHI >= 4 SAO (chỉ mobile) ── */
+  .sao-phu-wrap.two-col {
+    display: grid !important;
+    grid-template-columns: 1fr 1fr !important;
+    gap: 1px 4px !important;
+    align-items: start !important;
+  }
+  .sao-phu-wrap.two-col .sao.phu {
+    font-size: .68rem !important;
+    white-space: nowrap !important;
+    overflow: hidden !important;
+    text-overflow: ellipsis !important;
+  }
+  .sao.phu { font-size: .68rem !important; }
+  .th { width: 16px !important; height: 16px !important; font-size: .58rem !important; }
+
+  /* ── PHẦN DƯỚI CUNG ── */
+  .cung-bottom .dv-chuc {
+    font-size: .56rem !important;
+    font-weight: 700 !important;
+    letter-spacing: 0 !important;
+  }
+  .cung-bottom .ln-label { font-size: .54rem !important; }
+  .cung { min-height: 100px !important; }
+
+  /* ── TRUNG TÂM ── */
+  .ci-name { font-size: .82rem !important; }
+  .ci-zalo { font-size: .72rem !important; }
+  .ci-row  { font-size: .70rem !important; line-height: 1.5 !important; }
+  .ci-cuc  { font-size: .76rem !important; }
+}
+}
+/* Desktop: reset hoàn toàn */
+@media (min-width: 901px) {
+  .ban-outer {
+    padding: 62px 72px !important;
     overflow: visible !important;
-    /* Padding top tăng đủ chỗ cho hàng can cung + số đại vận */
-    padding-top: 20px !important;
+    display: block !important;
   }
-  /* Header row: dv (trái) + chuc (giữa) + cc (phải) dạng flex */
-  .cung-header-row {
-    display: flex;
-    flex-direction: row;
-    align-items: flex-start;
-    width: 100%;
+  .ban-wrap {
+    transform: none !important;
+    overflow: visible !important;
+    margin-left: 0 !important;
+    margin-right: 0 !important;
   }
-  /* Can cung — không dùng absolute trên mobile, thay bằng static trong flex */
-  .cung-cc {
-    position: absolute;
-    top: 3px;
-    right: 3px;
-    font-size: .65rem;
-    line-height: 1.2;
-    /* Safe padding tránh dính sát mép/border */
-    padding: 1px 3px 1px 0;
-    /* Đảm bảo không bị overflow:hidden clip */
-    overflow: visible;
-    white-space: nowrap;
-    max-width: 45%;
-    text-overflow: clip;
-    z-index: 5;
-  }
-  /* Số tuổi đại hạn — safe padding */
-  .cung-dv {
-    position: absolute;
-    top: 3px;
-    left: 3px;
-    font-size: .72rem;
-    z-index: 5;
-    overflow: visible;
-  }
-  /* Tên cung — chừa chỗ cho cc và dv ở trên */
-  .cung-chuc {
-    font-size: .72rem !important;
-    padding-top: 2px;
-    padding-left: 2px;
-    padding-right: 2px;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    /* Căn giữa trong phần còn lại sau khi trừ 2 absolute */
-    margin-left: 22px;
-    margin-right: 28px;
-  }
-  /* Viền mệnh/thân dày hơn 1 chút vẫn rõ */
-  .cung[style*="border:2px solid #c0392b"],
-  .cung[style*="border:2px solid #1a3a9b"] {
-    border-width: 2px !important;
-  }
-  /* Sao chinh/phu — font nhỏ hơn chút để vừa ô */
-  .sao.chinh { font-size: .80rem !important; }
-  .sao.phu   { font-size: .70rem !important; }
-  /* Ban outer padding nhỏ hơn trên mobile */
-  .ban-outer { padding: 36px 40px !important; }
-}
-
-@media (max-width: 480px) {
-  .cung-cc {
-    font-size: .60rem;
-    right: 2px;
-    top: 2px;
-    max-width: 48%;
-  }
-  .cung-dv {
-    font-size: .66rem;
-    left: 2px;
-    top: 2px;
-  }
-  .cung-chuc {
-    font-size: .65rem !important;
-    margin-left: 20px;
-    margin-right: 26px;
-  }
-  .ban-outer { padding: 28px 28px !important; }
-}
-
-/* ── Class thêm khi đang export trên mobile ──
-   Dùng để nới thêm safe zone, border thật mảnh */
-.exporting-mobile .ban-tuvi {
-  border-width: 1px !important;
-}
-.exporting-mobile .cung {
-  border-width: 1px !important;
-  overflow: visible !important;
-  padding-top: 22px !important;
-}
-.exporting-mobile .cung-cc {
-  top: 2px !important;
-  right: 3px !important;
-  font-size: .62rem !important;
-  padding: 1px 3px 1px 0 !important;
-  overflow: visible !important;
-  white-space: nowrap !important;
-  z-index: 5 !important;
-}
-.exporting-mobile .cung-dv {
-  top: 2px !important;
-  left: 3px !important;
-  font-size: .70rem !important;
-  overflow: visible !important;
-  z-index: 5 !important;
-}
-.exporting-mobile .cung-chuc {
-  margin-left: 22px !important;
-  margin-right: 28px !important;
-  padding-top: 2px !important;
 }
 </style>
 </head>
@@ -411,7 +420,7 @@ const TEN_CHUC=["MỆNH","HUYNH ĐỆ","PHU THÊ","TỬ NỮ","TÀI BẠCH","T�
 const TU_HOA={"Giáp":{loc:"Liêm Trinh",quyen:"Phá Quân",khoa:"Vũ Khúc",ki:"Thái Dương"},"Ất":{loc:"Thiên Cơ",quyen:"Thiên Lương",khoa:"Tử Vi",ki:"Thái Âm"},"Bính":{loc:"Thiên Đồng",quyen:"Thiên Cơ",khoa:"Văn Xương",ki:"Liêm Trinh"},"Đinh":{loc:"Thái Âm",quyen:"Thiên Đồng",khoa:"Thiên Cơ",ki:"Cự Môn"},"Mậu":{loc:"Tham Lang",quyen:"Thái Âm",khoa:"Hữu Bật",ki:"Thiên Cơ"},"Kỷ":{loc:"Vũ Khúc",quyen:"Tham Lang",khoa:"Thiên Lương",ki:"Văn Khúc"},"Canh":{loc:"Thái Dương",quyen:"Vũ Khúc",khoa:"Thái Âm",ki:"Thiên Đồng"},"Tân":{loc:"Cự Môn",quyen:"Thái Dương",khoa:"Văn Khúc",ki:"Văn Xương"},"Nhâm":{loc:"Thiên Lương",quyen:"Tử Vi",khoa:"Tả Phụ",ki:"Vũ Khúc"},"Quý":{loc:"Phá Quân",quyen:"Cự Môn",khoa:"Thái Âm",ki:"Tham Lang"}};
 const KY_COLOR={A:'#00cc55',B:'#dd0000',C:'#1a7fff',D:'#c9a84c'};
 const KY_TXT={A:'#000',B:'#fff',C:'#fff',D:'#000'};
-const CAN_ABB={Giáp:'G',Ất:'Ất',Bính:'B',Đinh:'Đ',Mậu:'Mậu',Kỷ:'Kỷ',Canh:'C',Tân:'Tân',Nhâm:'N',Quý:'Q'};
+const CAN_ABB={Giáp:'G',Ất:'Ấ',Bính:'B',Đinh:'Đ',Mậu:'M',Kỷ:'K',Canh:'C',Tân:'T',Nhâm:'N',Quý:'Q'};
 
 // Lưu niên — tên cung ngắn
 const LN_VONG_NGAN=['Mệnh LN','P.Mẫu LN','Phúc LN','Điền LN','Sự LN','Giao LN','Di LN','Tật LN','Tài LN','Tử LN','Phu LN','Huynh LN'];
@@ -421,7 +430,72 @@ let showArrowsFlag=true;
 let _cachedArrowData=null;
 let _chucMapGlobal={};
 
-// ── UTILS ──
+// ── HẰNG SỐ MŨI TÊN — tự chỉnh tại đây ──────────────────────
+// Desktop (scale=1): các giá trị gốc
+const ARROW_LY_TAM_LENGTH   = 34;   // px — chiều dài thân mũi tên ly tâm
+const ARROW_LY_TAM_AT       = 47;   // px — khoảng cách nhãn chữ (multi-hóa) từ rìa cung
+const ARROW_LY_TAM_STEP     = 13;   // px — khoảng cách ngang giữa nhiều nhãn
+const ARROW_LY_TAM_HEAD     = 13;   // px — kích thước đầu mũi tên ly tâm
+const ARROW_LY_TAM_LBL_OFF  = 22;   // px — offset ngang nhãn đơn (showLabel)
+const ARROW_BADGE_DIST      = 48;   // px — khoảng lùi badge từ điểm đến (hướng tâm)
+const ARROW_BADGE_R         = 11;   // px — bán kính badge circle
+const ARROW_BADGE_FONT      = 11;   // px — font-size chữ badge
+const ARROW_LBL_FONT        = 19;   // px — font-size nhãn ly tâm đơn
+// ── MOBILE CHART SCALE ──────────────────────────────────────
+// Tham số tự chỉnh:
+const CHART_SCALE_MAX_WIDTH  = 900;   // px — dưới ngưỡng này mới scale
+const CHART_FIT_RATIO        = 0.78;  // chart chiếm 78% viewport → 22% đệm + không gian mũi tên
+const CHART_MIN_SCALE        = 0.28;  // không cho nhỏ hơn 28%
+const CHART_MAX_SCALE        = 1.0;   // không scale lớn hơn 100%
+const CHART_OUTER_PAD_V      = 24;    // px — padding dọc thêm sau scale
+let   _chartNaturalW         = 0;     // đo lần đầu khi render, cache lại
+
+function applyMobileChartScale(){
+  const wrap=document.getElementById('banWrap');
+  if(!wrap)return;
+  const vw=window.innerWidth;
+
+  if(vw>CHART_SCALE_MAX_WIDTH){
+    wrap.style.transform='';
+    wrap.style.transformOrigin='';
+    wrap.style.marginLeft='';
+    wrap.style.marginRight='';
+    const outer=document.querySelector('.ban-outer');
+    if(outer){outer.style.height='';outer.style.padding='';outer.style.display='';outer.style.justifyContent='';}
+    window._chartScaleFactor=1;
+    return;
+  }
+
+  // Reset transform để đo naturalW chính xác
+  wrap.style.transform='none';
+  wrap.style.marginLeft='';
+  void wrap.offsetWidth; // force reflow
+  const measured=wrap.offsetWidth;
+  if(measured>300) _chartNaturalW=measured;
+  const naturalW=_chartNaturalW||measured||600;
+
+  // f = (vw × FIT_RATIO) / naturalW
+  let f=(vw*CHART_FIT_RATIO)/naturalW;
+  f=Math.max(CHART_MIN_SCALE,Math.min(CHART_MAX_SCALE,f));
+
+  wrap.style.transformOrigin='top center';
+  wrap.style.transform=`scale(${f})`;
+  wrap.style.marginLeft='';
+  wrap.style.marginRight='';
+
+  const naturalH=wrap.offsetHeight||500;
+  const scaledH=naturalH*f;
+  const outerEl=document.querySelector('.ban-outer');
+  if(outerEl){
+    outerEl.style.padding='0';
+    outerEl.style.display='flex';
+    outerEl.style.justifyContent='center';
+    outerEl.style.height=(scaledH+CHART_OUTER_PAD_V)+'px';
+  }
+
+  window._chartScaleFactor=f;
+}
+// ─────────────────────────────────────────────────────────────
 function abbCC(cc){if(!cc)return'';const p=cc.trim().split(' ');if(p.length===2)return(CAN_ABB[p[0]]||p[0][0])+'.'+p[1];return cc;}
 function canChiNam(y){const cn=["Giáp","Ất","Bính","Đinh","Mậu","Kỷ","Canh","Tân","Nhâm","Quý"],cc=DC;return cn[(y+6)%10]+' '+cc[(y+8)%12];}
 function buildTHMap(str){const can=str?.trim()?.split(' ')[0],th=TU_HOA[can]||{},m={};if(th.loc)m[th.loc]='A';if(th.quyen)m[th.quyen]='B';if(th.khoa)m[th.khoa]='C';if(th.ki)m[th.ki]='D';return m;}
@@ -736,75 +810,114 @@ function toggleArrows(){
 }
 
 function equalizeCungHeights(){
+  // Equalize theo từng hàng riêng thay vì global max.
+  // Lý do: nếu dùng global max, cung có nhiều phụ tinh (ví dụ HUYNH ĐỆ)
+  // sẽ kéo tất cả cung ở hàng khác cao theo → hàng dưới trông bất thường cao.
   const cungs=document.querySelectorAll('.ban-tuvi .cung:not(.center)');
+  // Reset tất cả minHeight trước
   cungs.forEach(el=>el.style.minHeight='');
-  let maxH=0;cungs.forEach(el=>{if(el.offsetHeight>maxH)maxH=el.offsetHeight;});
-  cungs.forEach(el=>el.style.minHeight=maxH+'px');
+
+  // LAYOUT[row][col] = cung index (-1 = center)
+  // Hàng 0: idx 5,6,7,8 | Hàng 1: idx 4,-1,-1,9 | Hàng 2: idx 3,-1,-1,10 | Hàng 3: idx 2,1,0,11
+  const ROWS=[[5,6,7,8],[4,9],[3,10],[2,1,0,11]];
+  ROWS.forEach(rowIdxs=>{
+    let rowMaxH=0;
+    rowIdxs.forEach(idx=>{
+      const el=document.getElementById(`cung-${idx}`);
+      if(el&&el.offsetHeight>rowMaxH) rowMaxH=el.offsetHeight;
+    });
+    rowIdxs.forEach(idx=>{
+      const el=document.getElementById(`cung-${idx}`);
+      if(el) el.style.minHeight=rowMaxH+'px';
+    });
+  });
 }
 
 // ── DRAW ARROWS ──
-function drawAllArrows(lyTamList,huongTamList){
+function drawAllArrows(lyTamList,huongTamList,scaleFactor){
+  // scaleFactor = window._chartScaleFactor (0.35–1.0)
+  // SVG và tọa độ localRect đều ở không gian natural (trước transform:scale).
+  // Khi chart bị scale(f), 1 natural-px = (1/f) visual-px.
+  // → Các hằng số mũi tên phải nhân với (1/f) để visual size không đổi,
+  //   HOẶC nhân với (1/f * targetVisualRatio) để thu ngắn đồng bộ.
+  // Ở đây ta muốn mũi tên ngắn lại theo chart → nhân hết với (1/f):
+  // natural_size = visual_target / f  (visual_target = hằng số desktop ≈ mũi tên đẹp).
+  // Khi f=1 (desktop): natural = visual = hằng số gốc. Đúng.
+  // Khi f=0.65 (mobile): natural = visual/0.65 → visual = natural*0.65 = hằng số*0.65 → ngắn lại.
+  const f = (scaleFactor && scaleFactor > 0 && scaleFactor <= 1) ? scaleFactor : 1;
+  // Tất cả kích thước nhân với f để mũi tên scale đồng bộ với chart
+  const LY_LEN   = ARROW_LY_TAM_LENGTH  * f;
+  const LY_AT    = ARROW_LY_TAM_AT      * f;
+  const LY_STEP  = ARROW_LY_TAM_STEP    * f;
+  const LY_HEAD  = ARROW_LY_TAM_HEAD    * f;
+  const LY_LOFF  = ARROW_LY_TAM_LBL_OFF * f;
+  const BDIST    = ARROW_BADGE_DIST      * f;
+  const BRAD     = ARROW_BADGE_R         * f;
+  const BFONT    = Math.max(8, ARROW_BADGE_FONT * f);
+  const LBLFONT  = Math.max(10, ARROW_LBL_FONT  * f);
   const wrap=document.getElementById('banWrap');if(!wrap)return;
   const outer=document.querySelector('.ban-outer');if(!outer)return;
   document.getElementById('banSVG')?.remove();
 
-  // SVG đặt trong ban-outer, tọa độ = tọa độ của ban-outer
-  const OW=outer.offsetWidth, OH=outer.offsetHeight;
+  // SVG đặt trong ban-wrap (cùng transform space), KHÔNG phải ban-outer.
+  // Lợi ích: SVG bị scale(f) cùng wrap → mũi tên tự ngắn theo chart.
+  // localRect tính relative to wrap → tọa độ chính xác.
+  // SVG overflow:visible để mũi tên ly tâm nhô ra ngoài wrap một chút.
+  const naturalW=wrap.offsetWidth, naturalH=wrap.offsetHeight;
   const ns='http://www.w3.org/2000/svg';
   const svg=document.createElementNS(ns,'svg');
   svg.id='banSVG';
-  svg.setAttribute('width',OW);svg.setAttribute('height',OH);
+  svg.setAttribute('width',naturalW);svg.setAttribute('height',naturalH);
   svg.style.cssText='position:absolute;top:0;left:0;width:100%;height:100%;overflow:visible;pointer-events:none;z-index:40;';
   const defs=document.createElementNS(ns,'defs');
   ['A','B','C','D'].forEach(k=>{const m=document.createElementNS(ns,'marker');m.setAttribute('id',`mk-${k}`);m.setAttribute('markerWidth','9');m.setAttribute('markerHeight','7');m.setAttribute('refX','8');m.setAttribute('refY','3.5');m.setAttribute('orient','auto');const p=document.createElementNS(ns,'path');p.setAttribute('d','M0,0 L9,3.5 L0,7 Z');p.setAttribute('fill',KY_COLOR[k]);m.appendChild(p);defs.appendChild(m);});
   svg.appendChild(defs);
 
   // ── HAI LAYER GROUP: mũi tên dưới, label trên ──
-  // Mọi đường/path/arrow vào arrowLayer; mọi badge circle+text vào labelLayer
-  // SVG paint theo thứ tự DOM → labelLayer luôn đè lên arrowLayer
   const arrowLayer=document.createElementNS(ns,'g');arrowLayer.id='svg-arrow-layer';
   const labelLayer=document.createElementNS(ns,'g');labelLayer.id='svg-label-layer';
   svg.appendChild(arrowLayer);
-  svg.appendChild(labelLayer);   // labelLayer sau = nằm trên cùng
+  svg.appendChild(labelLayer);
 
-  // Đặt SVG vào ban-outer (không phải ban-wrap)
-  outer.style.position='relative';
-  outer.appendChild(svg);
+  // Đặt SVG vào ban-wrap (không phải ban-outer)
+  wrap.style.position='relative';
+  wrap.appendChild(svg);
 
-  // localRect: tính tọa độ cung relative to ban-outer
+  // localRect: tính tọa độ cung relative to ban-wrap (SVG space)
   function localRect(el){
     let lx=0,ly=0,cur=el;
-    while(cur&&cur!==outer){lx+=cur.offsetLeft;ly+=cur.offsetTop;cur=cur.offsetParent;}
+    while(cur&&cur!==wrap){lx+=cur.offsetLeft;ly+=cur.offsetTop;cur=cur.offsetParent;}
     return{l:lx,t:ly,r:lx+el.offsetWidth,b:ly+el.offsetHeight,cx:lx+el.offsetWidth/2,cy:ly+el.offsetHeight/2};
   }
   function intersect(p1,p2,rect){const dx=p2[0]-p1[0],dy=p2[1]-p1[1];const segs=[[rect.l,rect.t,rect.r,rect.t],[rect.l,rect.b,rect.r,rect.b],[rect.l,rect.t,rect.l,rect.b],[rect.r,rect.t,rect.r,rect.b]];let best=null,bestT=Infinity;segs.forEach(([ax,ay,bx,by])=>{const ex=bx-ax,ey=by-ay,den=dx*ey-dy*ex;if(Math.abs(den)<1e-9)return;const t=((ax-p1[0])*ey-(ay-p1[1])*ex)/den,u=((ax-p1[0])*dy-(ay-p1[1])*dx)/den;if(t>0.01&&t<bestT&&u>=-0.01&&u<=1.01){bestT=t;best=[p1[0]+t*dx,p1[1]+t*dy];}});return best;}
 
   function addLyTamArrow(sx,sy,ex,ey,k,showLabel){
-    const ang=Math.atan2(ey-sy,ex-sx),HEAD=13;
-    const hit=document.createElementNS(ns,'line');hit.setAttribute('x1',sx);hit.setAttribute('y1',sy);hit.setAttribute('x2',ex+Math.cos(ang)*(HEAD+18));hit.setAttribute('y2',ey+Math.sin(ang)*(HEAD+18));hit.setAttribute('stroke','transparent');hit.setAttribute('stroke-width','20');hit.style.pointerEvents='stroke';hit.className='arrow-lytam';
-    const line=document.createElementNS(ns,'line');line.setAttribute('x1',sx);line.setAttribute('y1',sy);line.setAttribute('x2',ex);line.setAttribute('y2',ey);line.setAttribute('stroke',KY_COLOR[k]);line.setAttribute('stroke-width','3.5');line.className='arrow-lytam';line.style.pointerEvents='none';
+    const ang=Math.atan2(ey-sy,ex-sx),HEAD=LY_HEAD;
+    const hit=document.createElementNS(ns,'line');hit.setAttribute('x1',sx);hit.setAttribute('y1',sy);hit.setAttribute('x2',ex+Math.cos(ang)*(HEAD+18*f));hit.setAttribute('y2',ey+Math.sin(ang)*(HEAD+18*f));hit.setAttribute('stroke','transparent');hit.setAttribute('stroke-width','20');hit.style.pointerEvents='stroke';hit.className='arrow-lytam';
+    const line=document.createElementNS(ns,'line');line.setAttribute('x1',sx);line.setAttribute('y1',sy);line.setAttribute('x2',ex);line.setAttribute('y2',ey);line.setAttribute('stroke',KY_COLOR[k]);line.setAttribute('stroke-width',String(Math.max(1.5,3.5*f)));line.className='arrow-lytam';line.style.pointerEvents='none';
     const tipX=ex+Math.cos(ang)*HEAD,tipY=ey+Math.sin(ang)*HEAD;
     const h1x=ex-Math.sin(ang)*(HEAD*.65),h1y=ey+Math.cos(ang)*(HEAD*.65);
     const h2x=ex+Math.sin(ang)*(HEAD*.65),h2y=ey-Math.cos(ang)*(HEAD*.65);
     const arrow=document.createElementNS(ns,'path');arrow.setAttribute('d',`M${tipX},${tipY} L${h1x},${h1y} L${h2x},${h2y} Z`);arrow.setAttribute('fill',KY_COLOR[k]);arrow.setAttribute('stroke',KY_COLOR[k]);arrow.setAttribute('stroke-width','1.5');arrow.setAttribute('stroke-linejoin','round');arrow.style.pointerEvents='none';arrow.className='arrow-lytam';
     arrowLayer.appendChild(hit);arrowLayer.appendChild(line);arrowLayer.appendChild(arrow);
-    if(showLabel){const isUp=Math.sin(ang)<-.5,isDown=Math.sin(ang)>.5;let lblX,lblY;if(isUp){lblX=tipX+22;lblY=tipY+6;}else if(isDown){lblX=tipX+23;lblY=tipY;}else{lblX=tipX;lblY=tipY+25;}const txt=document.createElementNS(ns,'text');txt.setAttribute('x',String(lblX));txt.setAttribute('y',String(lblY));txt.setAttribute('text-anchor','middle');txt.setAttribute('font-size','19');txt.setAttribute('fill',KY_COLOR[k]);txt.setAttribute('font-weight','300');txt.style.filter='drop-shadow(0 0 4px #fff) drop-shadow(0 0 4px #fff)';txt.style.pointerEvents='none';txt.textContent=k;txt.className='arrow-lytam';labelLayer.appendChild(txt);}
+    if(showLabel){const isUp=Math.sin(ang)<-.5,isDown=Math.sin(ang)>.5;let lblX,lblY;if(isUp){lblX=tipX+LY_LOFF;lblY=tipY+6*f;}else if(isDown){lblX=tipX+LY_LOFF;lblY=tipY;}else{lblX=tipX;lblY=tipY+LY_LOFF;}const txt=document.createElementNS(ns,'text');txt.setAttribute('x',String(lblX));txt.setAttribute('y',String(lblY));txt.setAttribute('text-anchor','middle');txt.setAttribute('font-size',String(LBLFONT));txt.setAttribute('fill',KY_COLOR[k]);txt.setAttribute('font-weight','300');txt.style.filter='drop-shadow(0 0 4px #fff) drop-shadow(0 0 4px #fff)';txt.style.pointerEvents='none';txt.textContent=k;txt.className='arrow-lytam';labelLayer.appendChild(txt);}
   }
 
-  function addHuongTamArrow(x1,y1,x2,y2,k,cpKey,badgeDist=20){
+  function addHuongTamArrow(x1,y1,x2,y2,k,cpKey,badgeDist){
+    if(badgeDist===undefined)badgeDist=BDIST;
     if(!arrowCPs[cpKey])arrowCPs[cpKey]={p1x:x1,p1y:y1,p2x:x2,p2y:y2,cx:(x1+x2)/2,cy:(y1+y2)/2};
     const st=arrowCPs[cpKey];
     const g=document.createElementNS(ns,'g');g.setAttribute('data-huongtam','1');if(!showArrowsFlag)g.style.display='none';
     const pathEl=document.createElementNS(ns,'path');
     const hitPath=document.createElementNS(ns,'path');
     const bc=document.createElementNS(ns,'circle');
-    bc.setAttribute('r','11');bc.setAttribute('fill',KY_COLOR[k]);
+    bc.setAttribute('r',String(BRAD));bc.setAttribute('fill',KY_COLOR[k]);
     bc.setAttribute('stroke','none');
     bc.style.pointerEvents='none';
     const bc2=document.createElementNS(ns,'circle');bc2.setAttribute('r','0');
     const bt=document.createElementNS(ns,'text');
     bt.setAttribute('text-anchor','middle');bt.setAttribute('dominant-baseline','central');
-    bt.setAttribute('font-size','11');bt.setAttribute('fill',KY_TXT[k]);
+    bt.setAttribute('font-size',String(BFONT));bt.setAttribute('fill',KY_TXT[k]);
     bt.setAttribute('font-weight','900');bt.textContent=k;bt.style.pointerEvents='none';
 
     function update(){
@@ -852,15 +965,15 @@ function drawAllArrows(lyTamList,huongTamList){
     const r=localRect(el);
     const chucEl=el.querySelector('.cung-chuc');
     let chucCX=r.cx,chucCY=r.t+10;
-    if(chucEl){let lx2=0,ly2=0,cur=chucEl;while(cur&&cur!==outer){lx2+=cur.offsetLeft;ly2+=cur.offsetTop;cur=cur.offsetParent;}chucCX=lx2+chucEl.offsetWidth/2;chucCY=ly2+chucEl.offsetHeight/2;}
+    if(chucEl){let lx2=0,ly2=0,cur=chucEl;while(cur&&cur!==wrap){lx2+=cur.offsetLeft;ly2+=cur.offsetTop;cur=cur.offsetParent;}chucCX=lx2+chucEl.offsetWidth/2;chucCY=ly2+chucEl.offsetHeight/2;}
     const byDir={};items.forEach(item=>{if(!byDir[item.dir])byDir[item.dir]=[];byDir[item.dir].push(item);});
     Object.entries(byDir).forEach(([dir,dirItems])=>{
       const ang=dirAng[dir],perp=[-Math.sin(ang),Math.cos(ang)],multi=dirItems.length>1;
-      dirItems.forEach((item,i)=>{const off=(i-(dirItems.length-1)/2)*14;let sx,sy;if(dir==='up'){sx=chucCX+perp[0]*off;sy=r.t;}else if(dir==='down'){sx=chucCX+perp[0]*off;sy=r.b;}else if(dir==='left'){sx=r.l;sy=r.cy+off;}else{sx=r.r;sy=r.cy+off;}addLyTamArrow(sx,sy,sx+Math.cos(ang)*34,sy+Math.sin(ang)*34,item.ky,!multi);});
+      dirItems.forEach((item,i)=>{const off=(i-(dirItems.length-1)/2)*14*f;let sx,sy;if(dir==='up'){sx=chucCX+perp[0]*off;sy=r.t;}else if(dir==='down'){sx=chucCX+perp[0]*off;sy=r.b;}else if(dir==='left'){sx=r.l;sy=r.cy+off;}else{sx=r.r;sy=r.cy+off;}addLyTamArrow(sx,sy,sx+Math.cos(ang)*LY_LEN,sy+Math.sin(ang)*LY_LEN,item.ky,!multi);});
       if(!multi)return;
-      const AT=47;let lax,lay;if(dir==='up'){lax=chucCX+22;lay=r.t-AT+6;}else if(dir==='down'){lax=chucCX+23;lay=r.b+AT;}else if(dir==='left'){lax=r.l-AT+4;lay=r.cy+25;}else{lax=r.r+AT-4;lay=r.cy+25;}
-      const N=dirItems.length,STEP=13;
-      dirItems.forEach((item,i)=>{const lbl=document.createElementNS(ns,'text');lbl.setAttribute('x',String(lax+(i-(N-1)/2)*STEP));lbl.setAttribute('y',String(lay+6));lbl.setAttribute('text-anchor','middle');lbl.setAttribute('font-size','19');lbl.setAttribute('fill',KY_COLOR[item.ky]);lbl.setAttribute('font-weight','300');lbl.style.filter='drop-shadow(0 0 4px #fff) drop-shadow(0 0 4px #fff)';lbl.style.pointerEvents='none';lbl.textContent=item.ky;lbl.className='arrow-lytam';labelLayer.appendChild(lbl);});
+      const AT=LY_AT;let lax,lay;if(dir==='up'){lax=chucCX+LY_LOFF;lay=r.t-AT+6*f;}else if(dir==='down'){lax=chucCX+LY_LOFF;lay=r.b+AT;}else if(dir==='left'){lax=r.l-AT+4*f;lay=r.cy+LY_LOFF;}else{lax=r.r+AT-4*f;lay=r.cy+LY_LOFF;}
+      const N=dirItems.length,STEP=LY_STEP;
+      dirItems.forEach((item,i)=>{const lbl=document.createElementNS(ns,'text');lbl.setAttribute('x',String(lax+(i-(N-1)/2)*STEP));lbl.setAttribute('y',String(lay+6*f));lbl.setAttribute('text-anchor','middle');lbl.setAttribute('font-size',String(LBLFONT));lbl.setAttribute('fill',KY_COLOR[item.ky]);lbl.setAttribute('font-weight','300');lbl.style.filter='drop-shadow(0 0 4px #fff) drop-shadow(0 0 4px #fff)';lbl.style.pointerEvents='none';lbl.textContent=item.ky;lbl.className='arrow-lytam';labelLayer.appendChild(lbl);});
     });
   });
 
@@ -887,23 +1000,15 @@ function drawAllArrows(lyTamList,huongTamList){
         off=(i-(n-1)/2)*14,px=-Math.sin(ang)*off,py=Math.cos(ang)*off;
       const sFrom=[sR.cx+px,sR.cy+py],sTo=[dR.cx+px,dR.cy+py];
       const ptS=intersect(sFrom,sTo,sR)||sFrom,ptD=intersect(sTo,sFrom,dR)||sTo;
-      // Tìm vị trí trong nhóm cùng điểm đến để tính khoảng cách badge
-      addHuongTamArrow(ptS[0],ptS[1],ptD[0],ptD[1],item.ky,`${item.srcIdx}-${item.dstIdx}-${item.ky}-${i}`,48);
+      addHuongTamArrow(ptS[0],ptS[1],ptD[0],ptD[1],item.ky,`${item.srcIdx}-${item.dstIdx}-${item.ky}-${i}`,BDIST);
     });
   });
 }
 
-// ── CẤU HÌNH EXPORT MOBILE ──
-// Bạn có thể tự chỉnh các giá trị này:
-const EXPORT_MOBILE_BORDER_SCALE = 1;   // Không nhân thêm; border đã mảnh qua CSS
-const EXPORT_MOBILE_HEADER_PADDING_TOP = 22;   // px — safe zone cho can cung + số ĐV
-const EXPORT_MOBILE_HEADER_PADDING_RIGHT = 28;  // px — safe zone phải cho can cung
-const EXPORT_MOBILE_CAN_FONT_SIZE = '0.62rem';  // font-size can cung khi export
-
 // ── DETECT MOBILE ──
 function _isMobileExport(){
   return /Android|iPhone|iPad|iPod|Mobile/i.test(navigator.userAgent)
-    || window.innerWidth <= 768;
+    || window.innerWidth <= 900;
 }
 
 // ── API ──
@@ -916,25 +1021,31 @@ async function saveLaSo(){
   const isMob=_isMobileExport();
   const DPR=window.devicePixelRatio||1;
 
-  // Trên mobile: dùng scale=1 (không nhân DPR thêm — tránh border bị dày giả)
-  // Trên desktop: dùng SCALE=2 như cũ
-  // Lý do: html2canvas scale=2 trên mobile DPR=3 tạo canvas 6x → border 1px CSS
-  // bị render thành ~3-6px visual trong ảnh output. Dùng scale=1 trên mobile
-  // cho border sát với kích thước CSS thực (chỉ nhân 1 lần bởi DPR nội bộ browser).
-  const SCALE = isMob ? 1 : 2;
+  // Export ở scale=2 trên mọi thiết bị — chất lượng ổn định.
+  // Trước khi chụp: reset transform của ban-wrap về scale(1) để
+  // html2canvas chụp layout gốc (không bị scale 2 lần).
+  // Sau khi chụp: restore lại transform mobile.
+  const SCALE = 2;
 
-  // Thêm class exporting-mobile để áp style tối ưu export (viền mảnh, safe padding)
-  if(isMob) document.body.classList.add('exporting-mobile');
+  const wrap=document.getElementById('banWrap');
+  const savedTransform = wrap ? wrap.style.transform : '';
+  const savedOuterHeight = outer.style.height;
 
-  // Vẽ lại mũi tên trước
+  // Reset scale → ban-outer cũng cần height auto để html2canvas đo đúng
+  if(wrap) wrap.style.transform='';
+  wrap && (wrap.style.marginLeft='');
+  outer.style.height='auto';
+  outer.style.padding='62px 72px';   // padding desktop gốc
+
+  // Vẽ lại mũi tên ở layout gốc (chưa scale)
   equalizeCungHeights();
   Object.keys(arrowCPs).forEach(k=>delete arrowCPs[k]);
-  if(_cachedArrowData) drawAllArrows(_cachedArrowData.lyTamList,_cachedArrowData.huongTamList);
+  if(_cachedArrowData) drawAllArrows(_cachedArrowData.lyTamList,_cachedArrowData.huongTamList,window._chartScaleFactor);
   await new Promise(r=>setTimeout(r,350));
 
   const bg='#fdf6e3';
 
-  // Ẩn SVG, chụp ban-outer
+  // Ẩn SVG, chụp ban-outer ở layout gốc
   const liveSVG=document.getElementById('banSVG');
   if(liveSVG) liveSVG.style.display='none';
 
@@ -948,7 +1059,10 @@ async function saveLaSo(){
     });
   }catch(e){
     if(liveSVG)liveSVG.style.display='';
-    if(isMob) document.body.classList.remove('exporting-mobile');
+    // Restore sau lỗi
+    if(wrap) wrap.style.transform=savedTransform;
+    outer.style.height=savedOuterHeight;
+    if(isMob){ outer.style.padding=''; applyMobileChartScale(); }
     alert('Lỗi: '+e.message);
     if(btn){btn.disabled=false;btn.textContent='💾 Lưu ảnh lá số';}
     return;
@@ -962,10 +1076,12 @@ async function saveLaSo(){
   ctx.drawImage(boardCanvas,0,0);
 
   const liveSVG2=document.getElementById('banSVG');
-  if(!liveSVG2){finish(out);return;}
+  if(!liveSVG2){restoreScale();finish(out);return;}
 
   const ser=new XMLSerializer();
   const svgStr=ser.serializeToString(liveSVG2);
+  // SVG giờ nằm trong ban-wrap; outer chứa wrap với padding desktop.
+  // Vẽ SVG overlay lên toàn bộ canvas theo kích thước outer.
   const OW=outer.offsetWidth, OH=outer.offsetHeight;
   const blob2=new Blob([svgStr],{type:'image/svg+xml;charset=utf-8'});
   const url=URL.createObjectURL(blob2);
@@ -973,16 +1089,23 @@ async function saveLaSo(){
   img.onload=()=>{
     ctx.drawImage(img,0,0,OW*SCALE,OH*SCALE);
     URL.revokeObjectURL(url);
-    // Gỡ class sau khi đã capture xong
-    if(isMob) document.body.classList.remove('exporting-mobile');
+    restoreScale();
     finish(out);
   };
-  img.onerror=()=>{
-    URL.revokeObjectURL(url);
-    if(isMob) document.body.classList.remove('exporting-mobile');
-    finish(out);
-  };
+  img.onerror=()=>{URL.revokeObjectURL(url);restoreScale();finish(out);};
   img.src=url;
+
+  function restoreScale(){
+    // Restore transform và layout mobile sau khi capture xong
+    if(isMob){
+      outer.style.padding='';
+      applyMobileChartScale();
+      // Vẽ lại mũi tên theo layout mobile đã restore
+      equalizeCungHeights();
+      Object.keys(arrowCPs).forEach(k=>delete arrowCPs[k]);
+      if(_cachedArrowData) drawAllArrows(_cachedArrowData.lyTamList,_cachedArrowData.huongTamList,window._chartScaleFactor);
+    }
+  }
 
   function finish(canvas){
     const hoTen=(document.getElementById('hoTen').value||'laso').replace(/\s+/g,'_');
@@ -1144,14 +1267,17 @@ function render(d){
       function mkSao(s,cls){const ky=thMap[s.ten];const kyH=ky?`<span class="th th-${ky}">${ky}</span>`:'';return`<span class="sao ${cls}">${s.ten}${kyH}</span>`;}
       const chinhHtml=chinhs.map(s=>`<div style="display:flex;justify-content:center;width:100%">${mkSao(s,'chinh')}</div>`).join('');
       const phuHtml=phus.map(s=>mkSao(s,'phu')).join('');
+      const phuWrapClass=`sao-phu-wrap${phus.length>=4?' two-col':''}`;
       const borderStyle=iM?'border:2px solid #c0392b !important;':iT?'border:2px solid #1a3a9b !important;':'';
 
       banHtml+=`<div class="cung" id="cung-${idx}" style="${borderStyle}">
-        ${dvTuoi!==''?`<div class="cung-dv">${dvTuoi}</div>`:''}
-        <div class="cung-cc">${abbCC(canChiCung)}</div>
-        <div class="cung-chuc">${TEN_CHUC[chucIdx]}</div>
+        <div class="cung-header">
+          <span class="cung-dv">${dvTuoi!==''?dvTuoi:''}</span>
+          <span class="cung-chuc">${TEN_CHUC[chucIdx]}</span>
+          <span class="cung-cc">${abbCC(canChiCung)}</span>
+        </div>
         <div class="sao-chinh-wrap">${chinhHtml}</div>
-        ${phuHtml?`<div class="sao-phu-wrap">${phuHtml}</div>`:''}
+        ${phuHtml?`<div class="${phuWrapClass}">${phuHtml}</div>`:''}
         <div class="ln-chuc" style="display:none">${lnThang?`<span style="color:#ff8c00;font-weight:900">${lnThang}</span> · `:''}<span>${lnCungTen}</span></div>
         <div class="cung-bottom">
           ${dvCucTen?`<span class="dv-chuc">${dvCucTen} ĐV</span>`:''}
@@ -1179,9 +1305,24 @@ function render(d){
   document.getElementById('result').scrollIntoView({behavior:'smooth'});
 
   setTimeout(()=>{
+    // 1. Đo natural width từ ban-tuvi (không bị ảnh hưởng bởi ban-outer padding)
+    //    TRƯỚC khi equalize và scale để có số chính xác.
+    const _wrapEl=document.getElementById('banWrap');
+    const _tuvi=document.getElementById('banTuvi');
+    if(_wrapEl&&_tuvi&&window.innerWidth<=CHART_SCALE_MAX_WIDTH){
+      // Tạm reset transform để đo đúng
+      _wrapEl.style.transform='none';
+      _wrapEl.style.marginLeft='';
+      void _wrapEl.offsetWidth; // force reflow
+      _chartNaturalW=_tuvi.offsetWidth||_wrapEl.offsetWidth||600;
+    }
+    // 2. Cân bằng chiều cao cung
     equalizeCungHeights();
+    // 3. Scale toàn bộ wrap
+    applyMobileChartScale();
+    // 4. Vẽ mũi tên theo không gian đã scale
     Object.keys(arrowCPs).forEach(k=>delete arrowCPs[k]);
-    drawAllArrows(lyTamList,huongTamList);
+    drawAllArrows(lyTamList,huongTamList,window._chartScaleFactor);
   },250);
 
   // Vẽ lại mũi tên khi resize (cả banWrap lẫn window)
@@ -1189,9 +1330,18 @@ function render(d){
   if(window._arrowWinResize)window.removeEventListener('resize',window._arrowWinResize);
 
   function _redrawArrows(){
+    const _wrapEl=document.getElementById('banWrap');
+    const _tuvi=document.getElementById('banTuvi');
+    if(_wrapEl&&_tuvi&&window.innerWidth<=CHART_SCALE_MAX_WIDTH){
+      _wrapEl.style.transform='none';
+      _wrapEl.style.marginLeft='';
+      void _wrapEl.offsetWidth;
+      _chartNaturalW=_tuvi.offsetWidth||_wrapEl.offsetWidth||600;
+    }
     equalizeCungHeights();
+    applyMobileChartScale();
     Object.keys(arrowCPs).forEach(k=>delete arrowCPs[k]);
-    drawAllArrows(_cachedArrowData.lyTamList,_cachedArrowData.huongTamList);
+    drawAllArrows(_cachedArrowData.lyTamList,_cachedArrowData.huongTamList,window._chartScaleFactor);
   }
 
   // ResizeObserver cho banWrap
