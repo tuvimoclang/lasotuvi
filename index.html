@@ -904,14 +904,14 @@ document.addEventListener('keydown', function(e) {
   <div class="tpb-header">
     <div class="tpb-icon-title">
       <span class="tpb-icon">🌐</span>
-      <span class="tpb-title">Mở bằng trình duyệt để dùng đầy đủ</span>
+      <span class="tpb-title">Sao chép link & mở trên trình duyệt</span>
     </div>
     <button class="tpb-close" id="tpbClose" aria-label="Đóng">×</button>
   </div>
-  <!-- Text và hành vi nút sẽ được JS set tuỳ Android / iOS -->
-  <button class="tpb-copy-btn" id="tpbActionBtn">🌐 Mở bằng trình duyệt</button>
+  <!-- Nút copy link + lưu ý mở trình duyệt -->
+  <button class="tpb-copy-btn" id="tpbActionBtn">📋 Sao chép liên kết</button>
   <p class="tpb-msg" id="tpbMsg">
-    Không thể save hình ảnh nếu bấm link từ bên thứ 3. Hãy mở bằng trình duyệt để dùng đầy đủ chức năng.
+    ⚠️ Hãy dán link vào Safari hoặc Chrome để xem đầy đủ chức năng (bao gồm lưu ảnh lá số).
   </p>
 </div>
 
@@ -977,10 +977,10 @@ document.addEventListener('keydown', function(e) {
   function copyLink(btn) {
     var url = window.location.href;
     function onSuccess() {
-      btn.textContent = '✅ Đã copy link';
+      btn.textContent = '✅ Đã sao chép!';
       btn.classList.add('tpb-copied');
       setTimeout(function () {
-        btn.textContent = '📋 Copy Link';
+        btn.textContent = '📋 Sao chép liên kết';
         btn.classList.remove('tpb-copied');
       }, 2000);
     }
@@ -1007,23 +1007,10 @@ document.addEventListener('keydown', function(e) {
     var banner    = document.getElementById('tpbWarning');
     var closeBtn  = document.getElementById('tpbClose');
     var actionBtn = document.getElementById('tpbActionBtn');
-    var msgEl     = document.getElementById('tpbMsg');
     if (!banner) return;
 
-    var isAndroid = /Android/.test(ua);
-    var isIOS     = /iPhone|iPod/.test(ua);
-
-    if (isAndroid) {
-      // Android: có thể mở trình duyệt ngoài bằng Intent
-      actionBtn.textContent = '🌐 Mở bằng trình duyệt';
-      msgEl.textContent = 'Bấm nút trên để mở trang bằng trình duyệt và dùng đầy đủ chức năng (bao gồm lưu ảnh lá số).';
-      actionBtn.addEventListener('click', openInBrowser);
-    } else {
-      // iOS / thiết bị khác: Apple không cho mở Safari từ webview → copy link
-      actionBtn.textContent = '📋 Copy Link';
-      msgEl.textContent = 'Không thể save hình ảnh khi mở từ app bên thứ 3. Hãy copy link và dán vào Safari hoặc Chrome để dùng đầy đủ chức năng.';
-      actionBtn.addEventListener('click', function () { copyLink(actionBtn); });
-    }
+    // Luôn hiện nút sao chép liên kết cho mọi thiết bị
+    actionBtn.addEventListener('click', function () { copyLink(actionBtn); });
 
     // Hiện banner
     banner.classList.add('tpb-visible');
